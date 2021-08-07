@@ -17,9 +17,25 @@
       href="https://cdn.jsdelivr.net/npm/bulma@0.8.0/css/bulma.css"
       rel="stylesheet"
     />
+
+    <script>
+      if ("serviceWorker" in navigator) {
+        navigator.serviceWorker
+          .register("/sw.js")
+          .then((reg) => {
+            console.log("Le service worker a été enregistré!");
+          })
+          .catch((error) => {
+            console.error(error);
+          });
+      } else {
+        console.warn("Le service workers n'est pas supporté par ce navigateur.");
+      }
+    </script>
+
     <script src="./script.js"></script>
   </head>
-  <body class="has-background-success">
+  <body class="has-background-primary">
     <h1 class="title">La commode de Julie</h1>
     <div class="container"></div>
   </body>
