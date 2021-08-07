@@ -8,6 +8,7 @@ function chunkArray(array, size) {
 const dateTimeFormat = Intl.DateTimeFormat("fr");
 
 function generateUI(json){
+	console.info('appel de la fonction generateUI');
   const repos = json.map(j => ({
     name: j.name,
     icon: j.icon,
@@ -20,18 +21,18 @@ function generateUI(json){
   let html = "";
 
   chunks.forEach(chunk => {
-    html += '<div class="section has-background-primary-light"><div class="columns">';
+    html += '<div class="section"><div class="columns">';
 
     chunk.forEach(tiroir => {
       html += `
           <div class="column">
-            <div class="card has-background-primary-light">
-              <div class="card-content has-background-primary-light">
+            <div class="card has-background-primary">
+              <div class="card-content">
                 <div class="media">
-                  <div class="media-lefti has-background-warning-dark">
+                  <div class="media-lefti">
                     <figure class="image is-48x48">
-                      <img
-                        src="https://zifnab-pwa.go.yo.fr/${tiroir.icon}"
+                      <img class="has-background-info is-rounded"
+                        src="${tiroir.icon}"
                         alt="Placeholder image"
                       />
                     </figure>
@@ -56,31 +57,11 @@ function generateUI(json){
   });
 
   document.querySelector(".container").innerHTML = html;
+	console.log("DEBUG La page est chargée");
 }
-const json = [
-  {
-    id: 1,
-    node_id: "MDEwfjBuglfJaXRvcnk2NjEwNDg2Mw==",
-    name: "Tissu",
-    icon: "images/icons/icon-96x96.png",
-    html_url: "https://github.com/EmmanuelDemey/10K-Project",
-    description: null,
-    created_at: "2016-08-19T18:46:12Z",
-    updated_at: "2016-10-09T12:08:54Z",
-  },
-  {
-    id: 2,
-    node_id: "MDEwOlJlcG9zaXRvcnk2NjEwNDg2Mw==",
-    name: "Médaille",
-    icon: "images/icons/icon-96x96.png",
-    html_url: "https://github.com/EmmanuelDemey/10K-Project",
-    description: "Médailles de la Monnaie de Paris",
-    created_at: "2016-08-19T18:46:12Z",
-    updated_at: "2016-10-09T12:08:54Z",
-  }
-];
 
 document.addEventListener("DOMContentLoaded", function() {
-     generateUI(json);
-
+	fetch("https://zifnab-pwa.go.yo.fr/data.php")
+		.then(response => response.json(), err => console.error('DEBUG Une erreur lors du fetch data.php : ' + err))
+		.then(json => generateUI(json) );
 });
