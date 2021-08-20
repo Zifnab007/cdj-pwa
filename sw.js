@@ -11,3 +11,11 @@ self.addEventListener("activate", (event) => {
 	console.log("DEBUG SW status = activate");
 });
 
+self.addEventListener("idle", (event) => {
+	console.log("DEBUG SW status = idle");
+});
+
+self.addEventListener("terminated", (event) => {
+	console.log("DEBUG SW status = terminated");
+});
+

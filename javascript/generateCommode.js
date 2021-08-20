@@ -1,8 +1,8 @@
 import { chunkArray, dateTimeFormat } from "./utils.js";
 
-export default function generateUI(json){
+export default function generateCommode(json){
 
-	console.info('appel de la fonction generateUI');
+	console.info('appel de la fonction generateCommode');
 
   const repos = json.map(j => ({
     name: j.name,
@@ -21,7 +21,7 @@ export default function generateUI(json){
     chunk.forEach(tiroir => {
       html += `
           <div class="column">
-            <div class="card has-background-primary">
+            <div class="card has-background-white">
               <div class="card-content">
                 <div class="media">
                   <div class="media-lefti">
@@ -54,9 +54,3 @@ export default function generateUI(json){
   document.querySelector(".container").innerHTML = html;
 	console.log("DEBUG La page COMMODE est chargée");
 }
-
-document.addEventListener("DOMContentLoaded", function() {
-	fetch("https://zifnab-pwa.go.yo.fr/data.php")
-		.then(response => response.json(), err => console.error('DEBUG Une erreur lors du fetch data.php : ' + err))
-		.then(json => generateUI(json) );
-});

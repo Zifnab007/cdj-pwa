@@ -1,11 +1,23 @@
-import genererCommode from "./genererCommode.js";
+import generateConnection from "./generateConnection.js";
+import generateCommode from "./generateCommode.js";
 
-export default function generateUI(){
+export default function generateUI(maPage){
 
 	console.log('DEBUG Appel de la fonction generateUI');
 
-	fetch("https://zifnab-pwa.go.yo.fr/data.php")
-		.then(response => response.json(), err => console.error('DEBUG Une erreur lors du fetch data.php : ' + err))
-		.then(json => genererCommode(json) );
+	console.log('DEBUG charger la page '+maPage);
+	if (0 == maPage) {
+		// afficher un page pour se connecter
+		generateConnection();
+	} else if (3 == maPage) {
+		// Charger les info pour afficher la commode
+		fetch("data.php")
+			.then(response => response.json(), err => console.error('DEBUG Une erreur lors du fetch data.php : ' + err))
+			.then(json => generateCommode(json) );
+	} else {
+		// afficher un page pour se connecter
+		console.info('La page n\'est pas définie');
+		generateConnection();
+	}
 
 };
