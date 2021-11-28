@@ -3,9 +3,9 @@
 /*
 *
 * -------------------------------------------------------
-* CLASSNAME:        table
+* CLASSNAME:        Utilisateur
 * GENERATION DATE:  09/11/2007
-* CLASS FILE:       class.page.php
+* CLASS FILE:       class.utilisateur.php
 * -------------------------------------------------------
 *
 */
@@ -16,122 +16,99 @@ include_once($PATH_INCLUDE."class.table.php");
 // CLASS DECLARATION
 // **********************
 
-class page extends table
+class Utilisateurs extends table
 { // class : begin
 
 
   // **********************
   // ATTRIBUTE DECLARATION
   // **********************
-  var $nbOfUpdate;
-  var $creationDate;
-  var $updateDate;
-  var $lastLoadDate;
 
   // Cette classe utilise une table avec les champs suivants:
-  //  NOM (chaine de caractères)
-  //  CREATION (date)
-  //  MISEAJOUR (date)
-  //  ACCES (date)
-  //  COMPTEUR (entier)
+  //  Id (entier, auto-indent)
+  //  Nom (chaine de caractères)
+  //  Email (chaine de caractères)
+  //  Pass (chaine de caractères)
+  //  Cle (chaine de caractères)
+  //  Actif (boolean)
 
-  // **********************
-  // CONSTRUCTOR METHOD
-  // **********************
-  function page($tableName)
-  {
+	// **********************
+	// CONSTRUCTOR METHOD
+	// **********************
+	function __construct()
+	{
+		parent::__construct("utilisateur");
+	}
 
-    $this->table($tableName);
+	function pseudoDejaDefini($pseudo)
+	{
+		return ($this->isPresent("Nom",$pseudo));
+	}
 
-    $this->nbOfUpdate = 0;
-    $this->creationDate = "";
-    $this->updateDate = "";
-    $this->lastLoadDate = "";
+	function emailDejaDefini($email)
+	{
+		return ($this->isPresent("Email",$email));
+	}
 
-    if (isset ($_COOKIE['compte']))
-    {
-        echo '<div class="Debug ecran"><br /><br />Ce chargement n\'est pas compt&eacute; car vous &eacute;tes sur un PC administrateur<br /></div>';
-    } else {
-    	$maPage = "index";
-    	if (isset ($_SERVER["QUERY_STRING"]) && (!empty ($_SERVER["QUERY_STRING"]))) {
-	  $maPage = urldecode($_SERVER["QUERY_STRING"]);
-	} else if (isset ($_SERVER["REQUEST_URI"]) && (!empty ($_SERVER["REQUEST_URI"]))) {
-	  $maPage = $_SERVER["REQUEST_URI"];
+	function estValide($pseudo, $mdp)
+	{
+		$utilisateurValide = FALSE;
+		if ($this->isPresent("Nom",$pseudo)) {
+			if ( $this->selectByReference("Nom",$pseudo) ) {
+				$utilisateurValide = password_verify($mdp, $this->data->Pass);
+			}
+		}
+		return $utilisateurValide;
+	}
 
-    	}
-	$this->loaded($maPage);
-        echo '<div class="Debug"><br /><br />Cette page a &eacute;t&eacute; charg&eacute;e '.$this->nbOfUpdate.' fois.<br /></div>';
-    }
+	function estActif($pseudo)
+	{
+		$utilisateurActif = FALSE;
+		if ($this->isPresent("Nom",$pseudo)) {
+			if ( $this->selectByReference("Nom",$pseudo) ) {
+				$utilisateurActif = $this->data->Actif;
+			}
+		}
+		return $utilisateurActif;
+	}
 
-  }
+	function mettreAJourCle($pseudo)
+	{
+		$laCle = "";
+		if ( $this->selectByReference("Nom",$pseudo) ) {
+			$laCle = md5(uniqid(rand(), true));
+			$lUtilisateur = array();
+			$lUtilisateur['Cle'] = $laCle;
+			$this->update("Nom",$pseudo,$lUtilisateur);
+		}
+		return $laCle;
+	}
 
-  // **********************
-  // LOADED
-  // **********************
-
-  function loaded($pageName)
-  {
-
-    date_default_timezone_set('Europe/Paris');
-    if ($this->isPresent("NOM",$pageName))
-    {
-       tracer("La page $pageName existe");
-       // Lire le compteur et la date et les modifier
-       if ( $this->selectByReference("NOM",$pageName) )
-       {
-          $MaPage = array();
-          $lastLoadDate = strftime("%Y-%m-%d");
-          $MaPage['acces'] = strftime("%Y-%m-%d");
-          $MaPage['compteur'] = $this->data->compteur + 1;
-          $this->update("nom",$pageName,$MaPage);
-       } else {
-          echo "erreur interne";
-       }
-    } else {
-       tracer("La page $pageName n'existe pas");
-       // Creer une entrée à la date courrante
-       $MaPage = array();
-       $MaPage['nom'] = $pageName;
-       $MaPage['creation'] = strftime("%Y-%m-%d");
-       $MaPage['miseajour'] = strftime("%Y-%m-%d");
-       $MaPage['miseazero'] = strftime("%Y-%m-%d");
-       $MaPage['acces'] = strftime("%Y-%m-%d");
-       $MaPage['compteur'] = 1;
-       $this->insert($MaPage);
-    }
-    $this->nbOfUpdate = $MaPage['compteur'];
-
-  }
-
-  function nouvelAcces($pageName)
-  {
-    if ($this->isPresent("NOM",$pageName))
-    {
-       tracer("La page $pageName existe");
-       $MaPage = array();
-       $MaPage['acces'] = strftime("%Y-%m-%d");
-       $MaPage['compteur'] = $this->data->compteur + 1;
-       $this->update("nom",$pageName,$MaPage);
-    } else {
-       echo "<BR>Erreur: La page n'existe pas.<BR>";
-       tracer("La page $pageName n'existe pas");
-    }
-  }
-  
-  function miseAJour($pageName)
-  {
-    if ($this->isPresent("NOM",$pageName))
-    {
-       tracer("La page $pageName existe");
-       $MaPage = array();
-       $MaPage['miseajour'] = strftime("%Y-%m-%d");
-       $this->update("nom",$pageName,$MaPage);
-    } else {
-       echo "<BR>Erreur: La page n'existe pas.<BR>";
-       tracer("La page $pageName n'existe pas");
-    }
-
-  }
+	function creerUtilisateur($pseudo, $email, $motDePasse)
+	{
+		$message = "";
+		if ($this->pseudoDejaDefini($pseudo)) {
+			$message = "L'utilisateur ".$utilisateur." existe déjà";
+		} else if ($this->emailDejaDefini($email)) {
+			$message = "L'adresse mail ".$cwemailutilisateur." existe déjà";
+		} else {
+			$lUtilisateur = array();
+			$lUtilisateur['Nom'] = $pseudo;
+			$lUtilisateur['Email'] = $email;
+			// Encoder le mot de passe
+			$lUtilisateur['Pass'] = password_hash($motDePasse, PASSWORD_DEFAULT);
+			$lUtilisateur['Cle'] = md5(uniqid(rand(), true));
+			$lUtilisateur['Actif'] = FALSE;
+			if ($this->insert($lUtilisateur)) {
+				if (!$this->selectByReference("Nom", $pseudo)) {
+					$message = "Erreur interne à la lecture de la database.";
+				};
+			} else {
+				$message = "Erreur interne d'insertion dans la database.";
+			}
+		}
+		return $message;
+	}
 
 } // class : end
 

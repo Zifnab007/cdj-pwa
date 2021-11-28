@@ -68,7 +68,7 @@ class table
   // **********************
   // CONSTRUCTOR METHOD
   // **********************
-  function table($nomDeLaTable)
+  function __construct($nomDeLaTable)
   {
 
     $this->database = Database::GetInstance();
@@ -93,8 +93,8 @@ class table
 
 		  $Result = $this->database->result;
 		  $IsPresent = FALSE;
-		  $IsPresent = ($data = mysql_fetch_object($Result));
-		  mysql_free_result($Result);
+		  $IsPresent = ($data = mysqli_fetch_object($Result));
+		  mysqli_free_result($Result);
 
 	  }
 
@@ -223,13 +223,11 @@ class table
     } else {
        $this->limit = " LIMIT $limit ";
     }
-    tracer("defineLimit: ".$this->limit);
   }
 
   function defineJoin ($fieldName, $joinTableName, $joinFieldName)
   {
     $this->join = "LEFT JOIN $joinTableName ON $this->maTable.$fieldName = $joinTableName.$joinFieldName";
-    tracer("defineJoin: ".$this->join);
   }
 
   // **********************
@@ -240,15 +238,14 @@ class table
   {
 
     $sql =  "SELECT * FROM $this->maTable $this->join $this->order $this->limit;";
-    tracer("selectAll: ".$sql);
     $Existe = FALSE;
 
     if ($this->database->query($sql)) {
-    	$Existe = ($this->data = mysql_fetch_object($this->database->result));
+    	$Existe = ($this->data = mysqli_free_result($this->database->result));
 
 	if (! $Existe)
 	{
-		mysql_free_result($this->database->result);
+		mysqli_free_result($this->database->result);
 	}
 
     }
@@ -262,15 +259,13 @@ class table
 
     $LocalFilter = $this->filterEqual($fieldName, $value);
     $sql =  "SELECT * FROM $this->maTable $this->join WHERE $LocalFilter $this->order $this->limit;";
-    tracer("selectByReference: ".$sql);
-    $Existe = FALSE;
+    $Exist = FALSE;
     if ($this->database->query($sql)) {
-
-	    $Existe = ($this->data = mysql_fetch_object($this->database->result));
-	    mysql_free_result($this->database->result);
+	    $Exist = ($this->data = mysqli_fetch_object($this->database->result));
+	    mysqli_free_result($this->database->result);
     }
 
-    return $Existe;
+    return $Exist;
 
   }
 
@@ -278,15 +273,14 @@ class table
   {
 
     $sql =  "SELECT * FROM $this->maTable $this->join WHERE $filter $this->order $this->limit;";
-    tracer("selectWhere: ".$sql);
     $Existe = FALSE;
     if ($this->database->query($sql)) {
-	    $Exist = ($this->data = mysql_fetch_object($this->database->result));
+	    $Exist = ($this->data = mysqli_free_result($this->database->result));
     }
 
     if (! $Exist)
     {
-      mysql_free_result($this->database->result);
+      mysqli_free_result($this->database->result);
     }
     return $Exist;
 
@@ -296,10 +290,10 @@ class table
   {
 
     $Existe = FALSE;
-    if ($this->data = mysql_fetch_object($this->database->result)) {
+    if ($this->data = mysqli_free_result($this->database->result)) {
 	    $Existe = TRUE;
     } else {
-	    mysql_free_result($this->database->result);
+	    mysqli_free_result($this->database->result);
     }
     return $Exist;
 
@@ -313,7 +307,6 @@ class table
   {
 
     $sql = "DELETE FROM $this->maTable WHERE $fieldName = $value;";
-    tracer("selectWhere: ".$sql);
     $result = $this->database->query($sql);
 
   }
@@ -338,8 +331,7 @@ class table
         }
       }
       $sql = "INSERT INTO $this->maTable ( $DataFieldStr ) VALUES ( $DataValueStr )";
-      tracer("insert: $sql");
-      $this->database->query($sql);
+      return ($this->database->query($sql));
   }
 
   // **********************
@@ -348,8 +340,6 @@ class table
 
   function update($refName, $refValue, $fieldsValue)
   {
-
-    tracer("update: $refName = $refValue");
 
     $DataUpdStr = "";
     foreach ($fieldsValue as $cle => $valeur)
@@ -363,7 +353,6 @@ class table
     } 
     $LocalFilter = $this->filterEqual($refName, $refValue);
     $sql = " UPDATE $this->maTable SET $DataUpdStr WHERE $LocalFilter;";
-    tracer("update: $sql");
     $this->database->query($sql);
 
   }
@@ -374,8 +363,6 @@ class table
 
   function updateOrInsert($refName, $refValue, $fieldsValue)
   {
-
-    tracer("update: $refName = $refValue");
 
     if ($this->selectByReference($refName, $refValue))
     {
@@ -396,8 +383,8 @@ class table
     $existe = FALSE;
     if ($this->database->query($sql)) {
 
-    	$existe = ($row = mysql_fetch_row($this->database->result));
-	mysql_free_result($this->database->result);
+    	$existe = ($row = mysqli_fetch_row($this->database->result));
+	mysqli_free_result($this->database->result);
 
     }
 

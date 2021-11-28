@@ -1,23 +1,24 @@
-import generateConnection from "./generateConnection.js";
-import generateCommode from "./generateCommode.js";
+import generateConnectionPage from "./generateConnection.js";
+import generateCommodePage from "./generateCommode.js";
+import { chunkArray, dateTimeFormat, laPage } from "./utils.js";
 
-export default function generateUI(maPage){
+export default function generateUI(laPage){
 
 	console.log('DEBUG Appel de la fonction generateUI');
 
-	console.log('DEBUG charger la page '+maPage);
-	if (0 == maPage) {
+	console.log('DEBUG charger la page '+laPage);
+	if (0 == laPage) {
 		// afficher un page pour se connecter
-		generateConnection();
-	} else if (3 == maPage) {
+		generateConnectionPage();
+	} else if (3 == laPage) {
 		// Charger les info pour afficher la commode
-		fetch("data.php")
+		fetch("data-patch.json")
 			.then(response => response.json(), err => console.error('DEBUG Une erreur lors du fetch data.php : ' + err))
-			.then(json => generateCommode(json) );
+			.then(json => generateCommodePage(json) );
 	} else {
 		// afficher un page pour se connecter
 		console.info('La page n\'est pas définie');
-		generateConnection();
+		generateConnectionPage();
 	}
 
 };

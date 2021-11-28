@@ -25,7 +25,7 @@ class Database
   var $result;
   var $rows;
  
-  function Database()
+  function __construct()
   { // Method : begin
     //Konstruktor
  
@@ -37,8 +37,8 @@ class Database
     // ********** ADJUST THESE VALUES HERE **********
  
     $this->host = "localhost";                  //          <<---------
-    $this->password = 'mon password';           //          <<---------
-    $this->user = "mon user";                   //          <<---------
+    $this->password = 'mon mot de passe';           //          <<---------
+    $this->user = "mon nom";                   //          <<---------
     $this->database = "ma database";           //          <<---------
     $this->rows = 0;
 
@@ -50,7 +50,7 @@ class Database
   
   }
  
-  function &GetInstance() {
+  public static function &GetInstance() {
     static $instance = array();
     if ( ! count( $instance ) ) { $instance[0] = new Database(); };
     return $instance[0];
@@ -58,7 +58,7 @@ class Database
 
   function OpenLink()
   {
-	  if ($this->link = @mysql_connect($this->host,$this->user,$this->password))
+	  if ($this->link = new mysqli($this->host,$this->user,$this->password))
 	  { 
 		  $this->DBDisponible = TRUE;
 	  }
@@ -75,7 +75,7 @@ class Database
 
 	  if ($this->DBDisponible) {
 
-		  if (!@mysql_select_db($this->database,$this->link)) {
+		  if (!mysqli_select_db($this->link,$this->database)) {
 			  $this->DBDisponible = FALSE;
 			  print "Class Database select: Error while selecting DB.";
 			  // print "Class Database select: Error while selecting DB (".mysql_error().")";
@@ -94,7 +94,7 @@ class Database
 	  if ($this->DBDisponible) {
 
 		  $this->query = $query;
-		  $this->result = @mysql_query($query,$this->link) or die (print "Class Database: Error while executing Query $query");
+		  $this->result = mysqli_query($this->link,$query) or die (print "Class Database: Error while executing Query $query");
 		  return TRUE;
 
 	  } else {

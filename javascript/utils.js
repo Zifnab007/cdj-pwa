@@ -1,3 +1,5 @@
+export let laPage = -1;
+
 export function chunkArray(array, size) {
   if (array.length <= size) {
     return [array];
