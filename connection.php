@@ -28,12 +28,14 @@
 	}
 	if (empty($message)) {
 		$laCle = $DB_utilisateurs->mettreAJourCle($utilisateur);
+		$DB_utilisateurs->lireUtilisateur($utilisateur);
+//		print_r($DB_utilisateurs->data);
 	}
 
 	// Construire la réponse et la retourner
 	$reponse = array (
 		"pseudo" => $utilisateur,
-		"page" => 11,
+		"page" => "CON",
 		"cle" => $laCle,
 		"erreur" => $message,
 		"table" => "",

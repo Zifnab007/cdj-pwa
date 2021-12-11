@@ -19,6 +19,7 @@ include_once($PATH_INCLUDE."class.table.php");
 class Utilisateurs extends table
 { // class : begin
 
+	var $bases;
 
   // **********************
   // ATTRIBUTE DECLARATION
@@ -38,6 +39,7 @@ class Utilisateurs extends table
 	function __construct()
 	{
 		parent::__construct("utilisateur");
+		$this->bases = [];
 	}
 
 	function pseudoDejaDefini($pseudo)
@@ -70,6 +72,17 @@ class Utilisateurs extends table
 			}
 		}
 		return $utilisateurActif;
+	}
+
+	function estConnecte($pseudo, $cle)
+	{
+		$utilisateurValide = FALSE;
+		if ($this->isPresent("Nom",$pseudo)) {
+			if ( $this->selectByReference("Nom",$pseudo) ) {
+				$utilisateurValide = ($cle == $this->data->Cle);
+			}
+		}
+		return $utilisateurValide;
 	}
 
 	function mettreAJourCle($pseudo)
@@ -106,6 +119,27 @@ class Utilisateurs extends table
 			} else {
 				$message = "Erreur interne d'insertion dans la database.";
 			}
+		}
+		return $message;
+	}
+
+	function lireUtilisateur($pseudo)
+	{
+		$message = "";
+		if ($this->selectByReference("Nom", $pseudo)) {
+			$lesbases = new table("base");
+			if ($lesbases->selectByReference("Ecrivain", $this->data->id)) {
+				$this->bases[] = $lesbases->data;
+				$index = 1;
+				while (($index < TABLE_MAX) && $lesbases->selectNext()) {
+					$index++;
+					$this->bases[] = $lesbases->data;
+				}
+			} else {
+				$this->bases = [];
+			}
+		} else {
+			$message = "L'utilisateur n'est pas défini.";
 		}
 		return $message;
 	}

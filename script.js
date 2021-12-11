@@ -1,5 +1,5 @@
 // Les pages:
-// CON Connexion			(genererPageConnexion)
+// CON Connexion		(genererPageConnexion)
 // CMP Compte			(genererPageCompte)
 // VAL Validation		(genererPageValidation)
 // COM Commode			(genererPageCommode)
@@ -140,6 +140,7 @@ if (json.pseudo == lUtilisateur.get() && ("" == json.erreur)) {
 } else {
 	console.error(lUtilisateur.get()+' recu different de '+json.pseudo+' ou il y a une erreur '+json.erreur);
 	lUtilisateur.reset();
+	laCle.reset();
 	return false;
 }
 }
@@ -149,16 +150,13 @@ function messageEstValide(json) {
 	// - l'utilisateur est celui enregistré localement lors de la connection
 	// - la clé est celle enregistrée localement lors de la connection
 	// - le message d'erreur est vide
-if ("CON" == laPage) {
-	return validerMessage(json);
-} else {
+	console.info('DEBUG validation ' + json.cle+" de "+json.pseudo+" Erreur :"+json.erreur+".");
 	if ((json.cle == laCle.get()) && (json.pseudo == lUtilisateur.get()) && ("" == json.erreur)) {
 		return true;
 	} else {
 		console.error('Invalider '+json.pseudo+' message :'+json.erreur);
 		return false;
 	}
-}
 }
 
 // Classe "Adresse" pour construire les requêttes
@@ -192,7 +190,22 @@ function demanderConnexion() {
 	console.info('DEBUG Clic sur demanderConnexion ' + url.get());
 	fetch(url.get())
 		.then(response => response.json(), err => console.error('DEBUG Une erreur lors du fetch ' + url.href + ' : ' + err))
-		.then(json => genererPageCommode(json) );
+		.then(json => validerConnexion(json) );
+}
+
+// Valider la connexion
+function validerConnexion(json) {
+	if (validerMessage(json)) {
+		const url = new Adresse(window.location.href,'commode'+extention);
+		url.add("pseudo", lUtilisateur.get());
+		url.add("cle", laCle.get());
+		console.info('DEBUG execution de validerConnexion ' + url.get());
+		fetch(url.get())
+			.then(response => response.json(), err => console.error('DEBUG Une erreur lors du fetch ' + url.href + ' : ' + err))
+			.then(json => genererPageCommode(json) );
+	} else {
+		genererPageFatal("LA CONNEXION EST REFUSEE", json.erreur);
+	}
 }
 
 // Generer la page
@@ -420,11 +433,11 @@ function genererPageCommode(json){
 	if (messageEstValide(json)) {
 
 		const tiroirs = json.data.map(j => ({
-			name: j.name,
+			name: j.Nom,
 			id: j.id,
 			icon: j.icon,
 			description: j.description || "",
-			updated_at: j.updated_at
+			updated_at: j.MiseAJour
 		}));
 
 		let html = "";
@@ -476,7 +489,7 @@ function genererPageCommode(json){
 		console.log("DEBUG La page COMMODE (COM) est chargée");
 
 	} else {
-		genererPageFatal("IMPOSSIBLE D'AFFICHER LA COMMONDE", json.erreur);
+		genererPageFatal("IMPOSSIBLE D'AFFICHER LA COMMONDE", "Les informations de validations sont incorectes. Il faut vous reconnecter. "+json.erreur);
 	}
 
 }

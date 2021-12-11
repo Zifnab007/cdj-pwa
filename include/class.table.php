@@ -241,30 +241,30 @@ class table
     $Existe = FALSE;
 
     if ($this->database->query($sql)) {
-    	$Existe = ($this->data = mysqli_free_result($this->database->result));
+    	$Exist = ($this->data = mysqli_free_result($this->database->result));
 
-	if (! $Existe)
+	if (! $Exist)
 	{
 		mysqli_free_result($this->database->result);
 	}
 
     }
 
-    return $Existe;
+    return $Exist;
 
   }
 
   function selectByReference($fieldName, $value)
   {
 
-    $LocalFilter = $this->filterEqual($fieldName, $value);
+    $LocalFilter = $this->filterEqual($this->maTable.".".$fieldName, $value);
     $sql =  "SELECT * FROM $this->maTable $this->join WHERE $LocalFilter $this->order $this->limit;";
     $Exist = FALSE;
     if ($this->database->query($sql)) {
 	    $Exist = ($this->data = mysqli_fetch_object($this->database->result));
-	    mysqli_free_result($this->database->result);
     }
 
+    if (! $Exist) { mysqli_free_result($this->database->result); }
     return $Exist;
 
   }
@@ -273,15 +273,12 @@ class table
   {
 
     $sql =  "SELECT * FROM $this->maTable $this->join WHERE $filter $this->order $this->limit;";
-    $Existe = FALSE;
+    $Exist = FALSE;
     if ($this->database->query($sql)) {
 	    $Exist = ($this->data = mysqli_free_result($this->database->result));
     }
 
-    if (! $Exist)
-    {
-      mysqli_free_result($this->database->result);
-    }
+    if (! $Exist) { mysqli_free_result($this->database->result); }
     return $Exist;
 
   }
@@ -289,9 +286,9 @@ class table
   function selectNext()
   {
 
-    $Existe = FALSE;
-    if ($this->data = mysqli_free_result($this->database->result)) {
-	    $Existe = TRUE;
+    $Exist = FALSE;
+    if ($this->data = mysqli_fetch_object($this->database->result)) {
+	    $Exist = TRUE;
     } else {
 	    mysqli_free_result($this->database->result);
     }
