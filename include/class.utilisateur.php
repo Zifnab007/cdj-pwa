@@ -1,5 +1,4 @@
-﻿
-<?php
+﻿<?php
 /*
 *
 * -------------------------------------------------------
@@ -10,6 +9,7 @@
 *
 */
 include_once($PATH_INCLUDE."class.table.php");
+include_once($PATH_INCLUDE."class.tiroir.php");
 
 
 // **********************
@@ -20,6 +20,9 @@ class Utilisateurs extends table
 { // class : begin
 
 	var $bases;
+	var $derniereTable;
+	var $id;
+	var $pseudo;
 
   // **********************
   // ATTRIBUTE DECLARATION
@@ -40,6 +43,9 @@ class Utilisateurs extends table
 	{
 		parent::__construct("utilisateur");
 		$this->bases = [];
+		$this->derniereTable = 0;
+		$this->id = 0;
+		$this->pseudo = 0;
 	}
 
 	function pseudoDejaDefini($pseudo)
@@ -57,7 +63,7 @@ class Utilisateurs extends table
 		$utilisateurValide = FALSE;
 		if ($this->isPresent("Nom",$pseudo)) {
 			if ( $this->selectByReference("Nom",$pseudo) ) {
-				$utilisateurValide = password_verify($mdp, $this->data->Pass);
+				$utilisateurValide = password_verify($mdp, $this->data["Pass"]);
 			}
 		}
 		return $utilisateurValide;
@@ -68,7 +74,7 @@ class Utilisateurs extends table
 		$utilisateurActif = FALSE;
 		if ($this->isPresent("Nom",$pseudo)) {
 			if ( $this->selectByReference("Nom",$pseudo) ) {
-				$utilisateurActif = $this->data->Actif;
+				$utilisateurActif = $this->data["Actif"];
 			}
 		}
 		return $utilisateurActif;
@@ -79,7 +85,7 @@ class Utilisateurs extends table
 		$utilisateurValide = FALSE;
 		if ($this->isPresent("Nom",$pseudo)) {
 			if ( $this->selectByReference("Nom",$pseudo) ) {
-				$utilisateurValide = ($cle == $this->data->Cle);
+				$utilisateurValide = ($cle == $this->data["Cle"]);
 			}
 		}
 		return $utilisateurValide;
@@ -127,8 +133,10 @@ class Utilisateurs extends table
 	{
 		$message = "";
 		if ($this->selectByReference("Nom", $pseudo)) {
+			$this->id = $this->data["id"];
+			$this->pseudo = $pseudo;
 			$lesbases = new table("base");
-			if ($lesbases->selectByReference("Ecrivain", $this->data->id)) {
+			if ($lesbases->selectByReference("Ecrivain", $this->data["id"])) {
 				$this->bases[] = $lesbases->data;
 				$index = 1;
 				while (($index < TABLE_MAX) && $lesbases->selectNext()) {
@@ -140,6 +148,21 @@ class Utilisateurs extends table
 			}
 		} else {
 			$message = "L'utilisateur n'est pas défini.";
+		}
+		return $message;
+	}
+
+	function creerTable($nomDuTiroir, $lesChamps)
+	{
+		$message = "";
+		if (empty($this->id) || empty($this->pseudo)) {
+			$message = "L'utilisateur n'est pas séléctionné";
+		} else {
+			$tiroir = new Tiroir();
+			$message = $tiroir->creerTiroir($this->id, $nomDuTiroir, $lesChamps);
+			if (empty($message)) {
+				$this->derniereTable = $tiroir->id;
+			}
 		}
 		return $message;
 	}

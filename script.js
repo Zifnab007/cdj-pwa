@@ -4,18 +4,19 @@
 // VAL Validation		(genererPageValidation)
 // COM Commode			(genererPageCommode)
 // TIR Tiroir			(genererPageTiroir)
-// CRT CreationTiroir
+// CRT CreationTiroir		(genererPageNouveauTiroir)
 // MOT ModifTiroir
 // SUT SuppressionTiroir
 // OBJ Objet
-// CRO CreationObjet             (genererPageNouvelObjet)
-// MOO ModifObjet                (genererPageObjet)
+// CRO CreationObjet            (genererPageNouvelObjet)
+// MOO ModifObjet               (genererPageObjet)
 // SUO SuppressionObjet
-// ERR Erreur                    (genererPageErreur)
-// FAT Erreur                    (genererPageFatal)
+// ERR Erreur                   (genererPageErreur)
+// FAT Erreur                   (genererPageFatal)
 // INF Information		(genererInformation)
 // generateUI
 import { extention } from "./config.js";
+import { tracer, tracerTable } from "./traceur.js";
 //
 // Données et function principale
 //
@@ -26,16 +27,35 @@ class Enregistreur {
 		this.selecteur = selecteur;
 	}
 	get () {
-		console.log('DEBUG enregistreur '+this.selecteur+' get '+this.donnee);
+		tracer('enregistreur '+this.selecteur+' get '+this.donnee);
 		return this.donnee;
 	}
 	set (donnee) {
 		this.donnee = donnee;
-		console.log('DEBUG enregistreur '+this.selecteur+' set '+this.donnee);
+		tracer('enregistreur '+this.selecteur+' set '+this.donnee);
 	}
 	reset () {
 		this.donnee = null;
-		console.log('DEBUG enregistreur '+this.selecteur+' reset ');
+		tracer('enregistreur '+this.selecteur+' reset ');
+	}
+}
+
+// Classe "Adresse" pour construire les requêttes
+class Adresse {
+	constructor (base, page) {
+		this.name = base+"/"+page;
+	}
+	get() {
+		return this.name;
+	}
+	add(cle, valeur) {
+		let urlLocale = ""
+		if (-1 == this.name.indexOf("?")) {
+			urlLocale = this.name+"?";
+		} else {
+			urlLocale = this.name+"&";
+		}
+		this.name=urlLocale+cle+"="+valeur;
 	}
 }
 
@@ -43,10 +63,12 @@ var laPage = [];
 var lesPages = [];
 lesPages["CON"] = [];
 lesPages["CMP"] = [];
+viderDonneePage("CMP");
 lesPages["VAL"] = [];
 lesPages["COM"] = [];
 lesPages["TIR"] = [];
 lesPages["CRT"] = [];
+viderDonneePage("CRT");
 lesPages["MOT"] = [];
 lesPages["SUT"] = [];
 lesPages["OBJ"] = [];
@@ -56,6 +78,7 @@ lesPages["SUO"] = [];
 lesPages["ERR"] = [];
 lesPages["FAT"] = [];
 lesPages["INF"] = [];
+
 var laCle = new Enregistreur("cle");
 var lUtilisateur = new Enregistreur("utilisateur");
 var leTiroirId = new Enregistreur("tiroirId");
@@ -66,7 +89,7 @@ var laStructure = new Enregistreur("structure")
 var nomDuSite = "La commode de Julie";
 
 document.addEventListener("DOMContentLoaded", function() {
-console.log('DEBUG DOMContentLoaded event');
+tracer('DOMContentLoaded event');
 generateUI();
 });
 
@@ -76,7 +99,7 @@ generateUI();
 const dateTimeFormat = Intl.DateTimeFormat("fr");
 
 function pageCourante() {
-	console.log('DEBUG nombre de page '+laPage.length);
+	tracer('nombre de page '+laPage.length);
 	if (0 == laPage.length) {
 		return "CON";
 	} else {
@@ -85,7 +108,7 @@ function pageCourante() {
 }
 
 function donneePageCourante() {
-	console.log('DEBUG nombre de page '+laPage.length);
+	tracer('nombre de page '+laPage.length);
 	if (0 == laPage.length) {
 		return [];
 	} else {
@@ -108,13 +131,37 @@ function enregistrerNouvellePage(page) {
 	} else {
 		document.querySelector("#retour").className = "button is-link is-flex";
 	}
+	if ("COM" == page) {
+		document.querySelector("#creerTiroir").className = "button is-link is-flex";
+	} else {
+		document.querySelector("#creerTiroir").className = "button is-link is-hidden";
+	}
 	if ("TIR" == page) {
 		document.querySelector("#creerObjet").className = "button is-link is-flex";
 	} else {
 		document.querySelector("#creerObjet").className = "button is-link is-hidden";
 	}
-	console.log('DEBUG nombre de page '+laPage.length+ ' dernière page '+pageCourante());
-	console.table(laPage);
+	tracer('nombre de page '+laPage.length+' page demandée '+page+' dernière '+pageCourante());
+	tracerTable(laPage);
+}
+
+function viderDonneePage(page) {
+	let donnee = [];
+	if ("CMP" == page) {
+		// Page CMP
+		donnee["pseudo"] = "";
+		donnee["email"] = "";
+		donnee["mdp"] = "";
+		lesPages["CMP"] = donnee;
+	} else if ("CRT" == page) {
+		// Page CRT
+		donnee["nom"] = "";
+		for (var i=0;i<4;i++) {
+			donnee["nom"+i] = "";
+			donnee["type"+i] = "";
+		}
+		lesPages["CRT"] = donnee;
+	}
 }
 
 function memoriserDonneePage() {
@@ -124,8 +171,15 @@ function memoriserDonneePage() {
 		donnee["email"] = document.querySelector("#eMail").value;
 		donnee["mdp"] = document.querySelector("#motDePasse").value;
 		lesPages["CMP"] = donnee;
+	} else if ("CRT" == pageCourante()) {
+		let donnee = [];
+		donnee["nom"] = document.querySelector("#base").value;
+		for (var i=0;i<4;i++) {
+			donnee["nom"+i] = document.querySelector("#nom"+i).value;
+			donnee["type"+i] = document.querySelector("#type"+i).value;
+		}
+		lesPages["CRT"] = donnee;
 	}
-
 }
 
 function allerPagePrecedante() {
@@ -150,7 +204,7 @@ function messageEstValide(json) {
 	// - l'utilisateur est celui enregistré localement lors de la connection
 	// - la clé est celle enregistrée localement lors de la connection
 	// - le message d'erreur est vide
-	console.info('DEBUG validation ' + json.cle+" de "+json.pseudo+" Erreur :"+json.erreur+".");
+	tracer('validation ' + json.cle+" de "+json.pseudo+" Erreur :"+json.erreur+".");
 	if ((json.cle == laCle.get()) && (json.pseudo == lUtilisateur.get()) && ("" == json.erreur)) {
 		return true;
 	} else {
@@ -159,23 +213,60 @@ function messageEstValide(json) {
 	}
 }
 
-// Classe "Adresse" pour construire les requêttes
-class Adresse {
-	constructor (base, page) {
-		this.name = base+"/"+page;
-	}
-	get() {
-		return this.name;
-	}
-	add(cle, valeur) {
-		let urlLocale = ""
-		if (-1 == this.name.indexOf("?")) {
-			urlLocale = this.name+"?";
+function chapitreEnHTML(titre, texte) {
+	let TitreHTML = "";
+	let TexteHTML = "";
+	if ("" != titre) { TitreHTML = `<label class="label">${titre}</label>`; }
+	if ("" != texte) { TexteHTML = `${texte}<br/>`; }
+	return TitreHTML+TexteHTML;
+}
+
+function saisieEnHTML(titre, id, type, fond, valeur, aide) {
+	return `
+              <div class="field">
+                <label class="label">${titre}</label>
+                <div class="control has-icons-left has-icons-right">
+                  <input id="${id}" class="input is-success" type="${type}" placeholder="${fond}" value="${valeur}">
+                  <span class="icon is-small is-left">
+                    <i class="fas fa-user"></i>
+                  </span>
+                  <span class="icon is-small is-right">
+                    <i class="fas fa-check"></i>
+                  </span>
+                </div>
+                <p class="help is-success">${aide}</p>
+              </div>`;
+}
+
+function choixEnHTML(titre, id, choix, selection, aide) {
+	let html = `
+              <div class="field">
+                <label class="label">${titre}</label>
+                <div class="control has-icons-left has-icons-right">
+		  <div class="select">
+			<select id="${id}" class="input is-success">`;
+	for (var y in choix) {
+		if (y == selection) {
+			html += `
+				<option value="${y}">${y}</option selected>`;
 		} else {
-			urlLocale = this.name+"&";
+			html += `
+				<option value="${choix[y]}">${choix[y]}</option>`;
 		}
-		this.name=urlLocale+cle+"="+valeur;
-	}
+	};
+	html += `
+			</select>
+		  </div>
+                  <span class="icon is-small is-left">
+                    <i class="fas fa-user"></i>
+                  </span>
+                  <span class="icon is-small is-right">
+                    <i class="fas fa-check"></i>
+                  </span>
+                </div>
+                <p class="help is-success">${aide}</p>
+              </div>`;
+	return html;
 }
 
 // ###################################
@@ -187,7 +278,7 @@ function demanderConnexion() {
 	lUtilisateur.set(document.querySelector("#pseudo").value);
 	url.add("pseudo", lUtilisateur.get());
 	url.add("motDePasse", document.querySelector("#mdp").value);
-	console.info('DEBUG Clic sur demanderConnexion ' + url.get());
+	tracer('Clic sur demanderConnexion ' + url.get());
 	fetch(url.get())
 		.then(response => response.json(), err => console.error('DEBUG Une erreur lors du fetch ' + url.href + ' : ' + err))
 		.then(json => validerConnexion(json) );
@@ -197,9 +288,9 @@ function demanderConnexion() {
 function validerConnexion(json) {
 	if (validerMessage(json)) {
 		const url = new Adresse(window.location.href,'commode'+extention);
-		url.add("pseudo", lUtilisateur.get());
-		url.add("cle", laCle.get());
-		console.info('DEBUG execution de validerConnexion ' + url.get());
+		url.add("pseudo", json.pseudo);
+		url.add("cle", json.cle);
+		tracer('execution de validerConnexion ' + url.get());
 		fetch(url.get())
 			.then(response => response.json(), err => console.error('DEBUG Une erreur lors du fetch ' + url.href + ' : ' + err))
 			.then(json => genererPageCommode(json) );
@@ -211,7 +302,7 @@ function validerConnexion(json) {
 // Generer la page
 function genererPageConnexion(){
 
-	console.info('DEBUG appel de la fonction genererPageConnexion');
+	tracer('appel de la fonction genererPageConnexion');
 	laCle.reset();
 	lUtilisateur.reset();
 
@@ -228,38 +319,13 @@ function genererPageConnexion(){
           </div>
           <div class="column">
 
-            <div class="box">
+            <div class="box">`;
 
-              <label class="label">Connectez vous avec vos</label>
+	html += chapitreEnHTML("Connectez vous avec vos", "");
+	html += saisieEnHTML("Pseudo", "pseudo", "text", "Votre pseudo", "", "Saisir son pseudo");
+	html += saisieEnHTML("Mot de passe", "mdp", "password", "Votre mot de passe", "", "Saisir son mot de passe d'au moins 6 caractères");
 
-              <div class="field">
-                <label class="label">Pseudo</label>
-                <div class="control has-icons-left has-icons-right">
-                  <input id="pseudo" class="input is-success" type="text" placeholder="Votre pseudo">
-                  <span class="icon is-small is-left">
-                    <i class="fas fa-user"></i>
-                  </span>
-                  <span class="icon is-small is-right">
-                    <i class="fas fa-check"></i>
-                  </span>
-                </div>
-                <p class="help is-success">Saisir son pseudo</p>
-              </div>
-
-              <div class="field">
-                <label class="label">Mot de passe</label>
-                <div class="control has-icons-left has-icons-right">
-                  <input id="mdp" class="input is-success" type="password" placeholder="Votre mot de passe">
-                  <span class="icon is-small is-left">
-                    <i class="fas fa-password"></i>
-                  </span>
-                  <span class="icon is-small is-right">
-                    <i class="fas fa-check"></i>
-                  </span>
-                </div>
-                <p class="help is-success">Saisir son mot de passe d'au moins 6 caractères</p>
-              </div>
-
+	html += `
               <div class="field is-grouped">
                 <div class="control">
                   <button id="demanderConnexion" class="button is-link">Se connecter</button>
@@ -275,7 +341,7 @@ function genererPageConnexion(){
 	document.querySelector("#creerCompte").onclick = genererPageCompte;
 	document.querySelector("#demanderConnexion").onclick = demanderConnexion;
 	enregistrerNouvellePage("CON",[]);
-	console.log("DEBUG La page CONNEXION (CON) est chargée");
+	tracer("La page CONNEXION (CON) est chargée");
 }
 
 // ###############################################
@@ -285,10 +351,10 @@ function genererPageConnexion(){
 function demanderCreationCompte() {
 	memoriserDonneePage();
 	const url = new Adresse(window.location.href,'compte'+extention);
-	url.add("user", document.querySelector("#pseudo").value);
+	url.add("pseudo", document.querySelector("#pseudo").value);
 	url.add("email", document.querySelector("#eMail").value);
 	url.add("mdp", document.querySelector("#motDePasse").value);
-	console.info('DEBUG Clic sur demanderCreationCompte ' + url.get());
+	tracer('Clic sur demanderCreationCompte ' + url.get());
 	fetch(url.get())
 		.then(
 			response => response.json(),
@@ -301,62 +367,24 @@ function demanderCreationCompte() {
 // Generer la page de demande de création de compte
 function genererPageCompte(){
 
-	console.info('DEBUG appel de la fonction genererPageCompte');
-	let pseudo = "";
-	let email = "";
+	tracer('appel de la fonction genererPageCompte');
+	let pseudo = lesPages["CMP"]["pseudo"];
+	let email = lesPages["CMP"]["email"];
 	let mdp = "";
-	if (null != lesPages["CMP"]["pseudo"]) { pseudo = lesPages["CMP"]["pseudo"];}
-	if (null != lesPages["CMP"]["email"]) { email = lesPages["CMP"]["email"];}
 
 	let html = `
           <div class="column">
 
             <div class="box">
 
-              <label class="label">Créer un compte avec:</label>
+              <label class="label">Créer un compte avec:</label>`;
 
-              <div class="field">
-                <label class="label">Pseudo</label>
-                <div class="control has-icons-left has-icons-right">
-                  <input id="pseudo" class="input is-success" type="text" placeholder="Votre pseudo" value="${pseudo}">
-                  <span class="icon is-small is-left">
-                    <i class="fas fa-user"></i>
-                  </span>
-                  <span class="icon is-small is-right">
-                    <i class="fas fa-check"></i>
-                  </span>
-                </div>
-                <p class="help is-success">Ce pseudo est valide</p>
-              </div>
+	html += chapitreEnHTML("Créer un compte avec:", "");
+	html += saisieEnHTML("Pseudo", "pseudo", "text", "Votre pseudo", pseudo, "Ce pseudo est valide");
+	html += saisieEnHTML("Adresse e-mail", "eMail", "email", "Votre adresse e-mail", email, "Cette adresse e-mail est valide");
+	html += saisieEnHTML("Mot de passe", "motDePasse", "password", "Votre mot de passe", "", "Ce mot de passe est valide");
 
-              <div class="field">
-                <label class="label">adresse e-mail</label>
-                <div class="control has-icons-left has-icons-right">
-                  <input id="eMail" class="input is-success" type="email" placeholder="Votre adresse e-mail" value="${email}">
-                  <span class="icon is-small is-left">
-                    <i class="fas fa-password"></i>
-                  </span>
-                  <span class="icon is-small is-right">
-                    <i class="fas fa-check"></i>
-                  </span>
-                </div>
-                <p class="help is-success">Cette adresse e-mail est valide</p>
-              </div>
-
-              <div class="field">
-                <label class="label">Mot de passe</label>
-                <div class="control has-icons-left has-icons-right">
-                  <input id="motDePasse" class="input is-success" type="password" placeholder="Votre mot de passe" value="">
-                  <span class="icon is-small is-left">
-                    <i class="fas fa-password"></i>
-                  </span>
-                  <span class="icon is-small is-right">
-                    <i class="fas fa-check"></i>
-                  </span>
-                </div>
-                <p class="help is-success">Ce mot de passe est valide</p>
-              </div>
-
+	html += `
               <div class="field is-grouped">
                 <div class="control">
                   <button id="demanderCreationCompte" class="button is-link">Créer</button>
@@ -369,7 +397,7 @@ function genererPageCompte(){
 	document.querySelector(".title").innerHTML = nomDuSite;
 	document.querySelector("#demanderCreationCompte").onclick = demanderCreationCompte;
 	enregistrerNouvellePage("CMP",[]);
-	console.log("DEBUG La page COMPTE (CMP) est chargée");
+	tracer("La page COMPTE (CMP) est chargée");
 
 }
 
@@ -381,10 +409,10 @@ function genererPageCompte(){
 // Generer la page de demande de création de compte
 function genererPageValidation(json){
 
-	console.info('DEBUG appel de la fonction genererPageValidation');
+	tracer('appel de la fonction genererPageValidation');
 
 	if ("" == json.cle) {
-		console.log("DEBUG La page VALIDATION (VAL) n'est pas chargable");
+		tracer("La page VALIDATION (VAL) n'est pas chargable");
 		genererPageErreur("ERREUR DE CREATION DE COMPTE", json.erreur);
 	} else {
 		let html = `
@@ -393,7 +421,7 @@ function genererPageValidation(json){
             <div class="box">
 
               <!-- label class="label">Vous devez activer votre compte en cliquant sur le lien envoyé par e-mail.</label -->
-              <label class="label">La méthode d'activation du compte ne'st pas encore implémentée.</label>
+              <label class="label">La méthode d'activation du compte n'est pas encore implémentée.</label>
 
             </div>
 
@@ -402,7 +430,7 @@ function genererPageValidation(json){
 		document.querySelector(".container").innerHTML = html;
 		document.querySelector(".title").innerHTML = nomDuSite;
 		enregistrerNouvellePage("VAL",[]);
-		console.log("DEBUG La page VALIDATION (VAL) est chargée");
+		tracer("La page VALIDATION (VAL) est chargée");
 	}
 
 }
@@ -412,10 +440,10 @@ function genererPageValidation(json){
 //
 function demanderOuvrirTiroir(tiroirId) {
 	const url = new Adresse(window.location.href,'tiroir'+extention);
-	url.add("user", lUtilisateur.get());
+	url.add("pseudo", lUtilisateur.get());
 	url.add("cle", laCle.get());
 	url.add("tiroir", tiroirId);
-	console.info('DEBUG Clic sur demanderOuvrirTiroir ' + url.get());
+	tracer('Clic sur demanderOuvrirTiroir ' + url.get());
 	fetch(url.get())
 		.then(response => response.json(), err => console.error('ERREUR Une erreur lors du fetch ' + url.href + ' : ' + err))
 		.then(json => genererPageTiroir(json) );
@@ -425,7 +453,7 @@ function demanderOuvrirTiroir(tiroirId) {
 //
 function genererPageCommode(json){
 
-	console.info('DEBUG appel de la fonction genererPageCommode '+json.cle);
+	tracer('appel de la fonction genererPageCommode '+json.cle);
 
 	nomDeLaTable.reset();
 	lesObjets.reset();
@@ -481,23 +509,17 @@ function genererPageCommode(json){
 		document.querySelector(".title").innerHTML = nomDuSite;
 
 		tiroirs.forEach(tiroir => {
-			console.log("test creation onclick "+tiroir.id);
+			tracer("test creation onclick "+tiroir.id);
 			document.querySelector("#T"+tiroir.id).onclick = function() {demanderOuvrirTiroir(tiroir.id);};
 		});
 		enregistrerNouvellePage("COM",[]);
 
-		console.log("DEBUG La page COMMODE (COM) est chargée");
+		tracer("La page COMMODE (COM) est chargée");
 
 	} else {
 		genererPageFatal("IMPOSSIBLE D'AFFICHER LA COMMONDE", "Les informations de validations sont incorectes. Il faut vous reconnecter. "+json.erreur);
 	}
 
-}
-
-function requestCommodePage() {
-	fetch('commode'+extention)
-		.then(response => response.json(), err => console.error('ERREUR Une erreur lors du fetch commode.php : ' + err))
-		.then(json => genererPageCommode(json) );
 }
 
 // #################################
@@ -514,8 +536,8 @@ function afficherUnElement(key, value){
 
 function genererPageTiroir(leTiroir){
 
-	console.info('DEBUG appel de la fonction genererPageTiroir '+leTiroir.cle);
-//	console.table(leTiroir);
+	tracer('appel de la fonction genererPageTiroir '+leTiroir.cle);
+//	tracerTable(leTiroir);
 
 	if (messageEstValide(leTiroir)) {
 
@@ -529,7 +551,7 @@ function genererPageTiroir(leTiroir){
 		html += `
         <div class="section"> <div class="columns">`;
 
-//			console.table(lesObjets.get());
+//			tracerTable(lesObjets.get());
 		lesObjets.get().forEach(objet => {
 			html += `
           <div class="column">
@@ -556,7 +578,7 @@ function genererPageTiroir(leTiroir){
 			for (const [key, value] of Object.entries(objet.record)) {
 				html += afficherUnElement(key, value); 
 			}
-//			console.table(objet);
+//			tracerTable(objet);
 
 			html += `
                   <hr />
@@ -578,26 +600,106 @@ function genererPageTiroir(leTiroir){
 		document.querySelector(".title").innerHTML = nomDuSite+" : "+leTiroir.table;
 
 		lesObjets.get().forEach(objet => {
-			console.log("test creation objet "+objet.id);
+			tracer("test creation objet "+objet.id);
 			document.querySelector("#T"+objet.id).onclick = function() {genererPageObjet(objet);};
 		});
 		enregistrerNouvellePage("TIR",[]);
 
-		console.log("DEBUG La page TIROIR (TIR) est chargée");
+		tracer("La page TIROIR (TIR) est chargée");
 
 	} else {
-		genererPageConnexion();
+		genererPageErreur("L'AFFICHAGE DU TIROIR EST REFUSE", leTiroir.erreur);
 	}
 
 }
 
+// #####################################################
+// Génération de la page de creation d'un Tiroir ("CRT")
+//
+function demanderCreationTiroir() {
+	memoriserDonneePage();
+	const url = new Adresse(window.location.href,'tiroirCreer'+extention);
+	url.add("pseudo", lUtilisateur.get());
+	url.add("cle", laCle.get());
+	url.add("nom", document.querySelector("#base").value);
+	for (var i=0;i<4;i++) {
+		let elementNom = document.querySelector("#nom"+i).value;
+		if ("" != elementNom) {
+			url.add("nom"+i, elementNom);
+			url.add("type"+i, document.querySelector("#type"+i).value);
+		}
+	}
+	tracer('Clic sur demanderCreationTiroir ' + url.get());
+	fetch(url.get())
+		.then(
+			response => response.json(),
+			err => genererPageErreur(err, null))
+		.then(json => validerCreationTiroir(json) )
+		.catch(err => genererPageFatal(err, "Erreur interne levée lors de la création du tiroir "+document.querySelector("#base").value));
+}
+
+// Valider la creation du tiroir
+function validerCreationTiroir(json) {
+	if (validerMessage(json)) {
+		tracer('execution de validerCreationTiroir '+json.table);
+		demanderOuvrirTiroir(json.id);
+	} else {
+		genererPageErreur("LA CREATION DU TIROIR EST REFUSEE", json.erreur);
+	}
+}
+
+function genererPageNouveauTiroir(){
+
+	tracer('appel de la fonction genererPageNouveauTiroir ');
+
+	let tiroir = lesPages["CRT"];
+
+	let html = `
+          <div class="column">
+
+            <div class="box">`;
+
+	html += `
+              <div class="field is-grouped">
+                <div class="control">
+                  <button id="demanderCreationTiroir" class="button is-link">Créer le tiroir</button>
+                </div>
+	      </div>`;
+
+	html += chapitreEnHTML("Créer un nouveau tiroir:", "");
+	html += saisieEnHTML("Nom du tiroir", "base", "text", "Nom du tiroir", tiroir["nom"], "");
+	html += `
+	    <hr/>`;
+
+	html += chapitreEnHTML("", "Il y a déjà par défaut les champs id, Non, creation et MiseAJour.");
+	html += `
+	    <hr/>`;
+
+	html += chapitreEnHTML("Décrire les autres champs d'un objet du tiroir:", "");
+
+	for (var i=0;i<4;i++) {
+		html += saisieEnHTML("Nom du champ", "nom"+i, "text", "Nom du champ", tiroir["nom"+i], "");
+		html += choixEnHTML("Type du champ", "type"+i, ["DATETIME", "INT", "TEXT"], tiroir["type"+i], "");
+	}
+
+	html += "</div></div>";
+
+	document.querySelector(".container").innerHTML = html;
+	document.querySelector(".title").innerHTML = nomDuSite;
+	document.querySelector("#demanderCreationTiroir").onclick = demanderCreationTiroir;
+
+	enregistrerNouvellePage("CRT",[]);
+
+	tracer("La page NOUVEAU TIROIR (CRT) est chargée");
+
+}
 // #################################
 // Génération de la page de modification d'un élément ("MOO")
 //
 // Demander au server l'enregistrement
 function demanderEnregistrement() {
 	const url = new Adresse(window.location.href,'objet'+extention);
-	url.add("user", lUtilisateur.get());
+	url.add("pseudo", lUtilisateur.get());
 	url.add("cle", laCle.get());
 	url.add("tiroir", leTiroirId.get());
 	let commande = "";
@@ -613,10 +715,10 @@ function demanderEnregistrement() {
 	});
 	jsonCmd["record"] = jsonRecord;
 	lObjet.set(jsonCmd);
-	console.log(JSON.stringify(jsonCmd));
+	tracer(JSON.stringify(jsonCmd));
 	commande = JSON.stringify(jsonCmd);
 	url.add("objet", commande);
-	console.info('DEBUG Clic sur demanderEnregistrement ' + url.get());
+	tracer('Clic sur demanderEnregistrement ' + url.get());
 	fetch(url.get())
 		.then(
 			response => response.json(),
@@ -627,7 +729,7 @@ function demanderEnregistrement() {
 
 function genererPageObjet(objet){
 
-	console.info('DEBUG appel de la fonction genererPageObjet '+objet.id);
+	tracer('appel de la fonction genererPageObjet '+objet.id);
 
 		let html = "";
 		let texte = "";
@@ -657,7 +759,7 @@ function genererPageObjet(objet){
               </div>`;
 
 		laStructure.get().forEach(function (structure, index) {
-//			console.table(objet);
+//			tracerTable(objet);
 			if (null == objet.record[structure.Nom]) {texte = ""} else {texte = objet.record[structure.Nom]};
 			html += `
               <div class="field">
@@ -690,13 +792,13 @@ function genererPageObjet(objet){
 
 		enregistrerNouvellePage("MOO",[]);
 
-		console.log("DEBUG La page MODIFIER ELEMENT (MOO) est chargée");
+		tracer("La page MODIFIER ELEMENT (MOO) est chargée");
 
 }
 
 function genererPageNouvelObjet(){
 
-	console.info('DEBUG appel de la fonction genererPageNouvelObjet ');
+	tracer('appel de la fonction genererPageNouvelObjet ');
 
 	let objet = new Object();
 	let record = new Object();
@@ -721,18 +823,17 @@ function genererPageNouvelObjet(){
 // Generer la page
 function genererPageErreur(erreur, info){
 
-	console.info('DEBUG appel de la fonction genererPageErreur');
+	tracer('appel de la fonction genererPageErreur');
 
 	let html = `
           <div class="column">
 
-            <div class="box">
+            <div class="box">`;
 
-              <label class="label">Erreur : </label>${erreur}<br/>`
+	html += chapitreEnHTML("Erreur :", erreur);
 
 	if (null != info) {
-		html += `
-              <br/><label class="label">Information : </label>${info}<br/>`
+		html += chapitreEnHTML("Information :", info);
 	}
 
 	html += `
@@ -744,7 +845,7 @@ function genererPageErreur(erreur, info){
 
 	document.querySelector(".container").innerHTML = html;
 	enregistrerNouvellePage("ERR",[]);
-	console.log("DEBUG La page ERREUR (ERR) est chargée");
+	tracer("La page ERREUR (ERR) est chargée");
 }
 // ###################################
 // Génération de la page d'erreur fatale ("FAT")
@@ -752,7 +853,7 @@ function genererPageErreur(erreur, info){
 // Generer la page
 function genererPageFatal(erreur, info){
 
-	console.info('DEBUG appel de la fonction genererPageFatal');
+	tracer('appel de la fonction genererPageFatal');
 
 	let html = `
           <div class="column">
@@ -785,7 +886,7 @@ function genererPageFatal(erreur, info){
 	document.querySelector(".container").innerHTML = html;
 	document.querySelector("#revenirConnexion").onclick = genererPageConnexion;
 	enregistrerNouvellePage("FAT",[]);
-	console.log("DEBUG La page FATAL (FAT) est chargée");
+	tracer("La page FATAL (FAT) est chargée");
 }
 
 // ########################################
@@ -794,7 +895,7 @@ function genererPageFatal(erreur, info){
 // Generer la page
 function genererInformation() {
 
-	console.info('DEBUG appel de la fonction genererInformation');
+	tracer('appel de la fonction genererInformation');
 	memoriserDonneePage();
 
 	let utilisateur = lUtilisateur.get();
@@ -807,12 +908,13 @@ function genererInformation() {
 	let html = `
           <div class="column">
 
-            <div class="box">
+            <div class="box">`;
 
-              Utilisateur : ${utilisateur}<br/><br/>
+	html += chapitreEnHTML("Utilisateur :", utilisateur);
 
-              Service worker : ${LeServiceWorker}<br/><br/>
+	html += chapitreEnHTML("Service worker :", LeServiceWorker);
 
+	html += `
 	      Ce site est hébergé sur PlanetHost.<br/>
 	      Ce site est mis en forme avec Bulma.<br/>
 
@@ -822,7 +924,7 @@ function genererInformation() {
 
 	document.querySelector(".container").innerHTML = html;
 	enregistrerNouvellePage("INF",[]);
-	console.log("DEBUG La page ERREUR (INF) est chargée");
+	tracer("La page ERREUR (INF) est chargée");
 
 }
 
@@ -831,37 +933,44 @@ function genererInformation() {
 //
 function generateUI(){
 
-	console.log('DEBUG Appel de la fonction generateUI');
+	tracer('Appel de la fonction generateUI');
 
-	console.log('DEBUG charger la page '+pageCourante());
+	tracer('charger la page '+pageCourante());
 	if ("CON" == pageCourante()) {
 		// afficher un page pour se connecter
 		genererPageConnexion();
 	} else if ("COM" == pageCourante()) {
 		// Charger les info pour afficher la commode
-		fetch('commode'+extention)
+		const url = new Adresse(window.location.href,'commode'+extention);
+		url.add("pseudo", lUtilisateur.get());
+		url.add("cle", laCle.get());
+		fetch(url.get())
 			.then(response => response.json(), err => console.error('ERREUR Une erreur lors du fetch commode.php : ' + err))
 			.then(json => genererPageCommode(json) );
 	} else if ("CMP" == pageCourante()) {
 		// Afficher la céation d'un compte
 		genererPageCompte();
+	} else if ("CRT" == pageCourante()) {
+		// Charger les info pour afficher la creation d'un tiroir
+		genererPageNouveauTiroir();
 	} else if ("TIR" == pageCourante()) {
 		// Charger les info pour afficher le tiroir
 		const url = new Adresse(window.location.href,'tiroir'+extention);
-		url.add("user", lUtilisateur.get());
+		url.add("pseudo", lUtilisateur.get());
 		url.add("cle", laCle.get());
 		url.add("tiroir", leTiroirId.get());
-		console.info('DEBUG Clic sur demanderOuvrirTiroir ' + url.get());
+		tracer('Clic sur demanderOuvrirTiroir ' + url.get());
 		fetch(url.get())
 			.then(response => response.json(), err => console.error('ERREUR Une erreur lors du fetch ' + url.href + ' : ' + err))
 			.then(json => genererPageTiroir(json) );
 	} else {
 		// afficher un page pour se connecter
-		console.info("DEBUG La page n'est pas définie");
-		genererPageConnexion();
+		tracer("La page n'est pas définie");
+		genererPageFatal("LA PAGE PRECEDANTE EST INVALIDE", "");
 	}
 	document.querySelector("#retour").onclick = allerPagePrecedante;
 	document.querySelector("#config").onclick = genererInformation;
+	document.querySelector("#creerTiroir").onclick = genererPageNouveauTiroir;
 	document.querySelector("#creerObjet").onclick = function() {genererPageNouvelObjet();};
 
 };

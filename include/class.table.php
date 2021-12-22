@@ -93,7 +93,7 @@ class table
 
 		  $Result = $this->database->result;
 		  $IsPresent = FALSE;
-		  $IsPresent = ($data = mysqli_fetch_object($Result));
+		  $IsPresent = ($data = mysqli_fetch_array($Result));
 		  mysqli_free_result($Result);
 
 	  }
@@ -241,7 +241,7 @@ class table
     $Existe = FALSE;
 
     if ($this->database->query($sql)) {
-    	$Exist = ($this->data = mysqli_free_result($this->database->result));
+    	$Exist = ($this->data = mysqli_fetch_array($this->database->result));
 
 	if (! $Exist)
 	{
@@ -261,7 +261,7 @@ class table
     $sql =  "SELECT * FROM $this->maTable $this->join WHERE $LocalFilter $this->order $this->limit;";
     $Exist = FALSE;
     if ($this->database->query($sql)) {
-	    $Exist = ($this->data = mysqli_fetch_object($this->database->result));
+	    $Exist = ($this->data = mysqli_fetch_array($this->database->result));
     }
 
     if (! $Exist) { mysqli_free_result($this->database->result); }
@@ -287,7 +287,7 @@ class table
   {
 
     $Exist = FALSE;
-    if ($this->data = mysqli_fetch_object($this->database->result)) {
+    if ($this->data = mysqli_fetch_array($this->database->result)) {
 	    $Exist = TRUE;
     } else {
 	    mysqli_free_result($this->database->result);
@@ -328,7 +328,8 @@ class table
         }
       }
       $sql = "INSERT INTO $this->maTable ( $DataFieldStr ) VALUES ( $DataValueStr )";
-      return ($this->database->query($sql));
+      $report = $this->database->query($sql);
+      return $report;
   }
 
   // **********************
@@ -368,6 +369,20 @@ class table
       $this->insert($fieldsValue);
     }
 
+  }
+
+  // **********************
+  // CREATE
+  // **********************
+
+  function create($fields)
+  {
+	  $sql = " CREATE TABLE `".$this->maTable."` ( `id` INT NOT NULL AUTO_INCREMENT ";
+	  foreach ($fields as $value) {
+		$sql = $sql.", `".$value["nom"]."` ".$value["type"]." DEFAULT NULL ";
+	  }
+	  $sql = $sql.", PRIMARY KEY (`id`)) ENGINE = MyISAM;";
+	  return $this->database->query($sql);
   }
 
   function get_db_stat($filter = "")

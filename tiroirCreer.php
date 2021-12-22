@@ -9,8 +9,10 @@
 
 	$utilisateur = isset ($_GET['pseudo']) ? $_GET['pseudo'] : "" ;
 	$cle = isset ($_GET['cle']) ? $_GET['cle'] : "" ;
+	$nomDuTiroir = isset ($_GET['nom']) ? $_GET['nom'] : "" ;
 	$laCle = "";
 	$message = "";
+	$identifiant = 0;
 	$listeDesTables = [];
 
 	// Vérifier l'utilisateur
@@ -30,9 +32,29 @@
 	if (empty($message)) {
 		$DB_utilisateurs->lireUtilisateur($utilisateur);
 		$laCle = $DB_utilisateurs->data["Cle"];
-//		print_r($DB_utilisateurs->bases);
 		$listeDesTables = $DB_utilisateurs->bases;
-//		print_r($DB_utilisateurs->data);
+		// Vérifier que la base n'existe pas pour cet utilisateur
+		foreach ($DB_utilisateurs->bases as $table){
+			if ($table->Nom == $nomDuTiroir) { $message = "Le tiroir ".$nomDuTiroir." existe déjà."; }
+		}
+	}
+	if (empty($message)) {
+		// extraire les champs libres
+		$lesChamps = [];
+		$nom = "";
+		$type = "";
+		for ($i = 0; $i<4; $i++) {
+			$nom = isset ($_GET["nom".$i]) ? $_GET["nom".$i] : "" ;
+			$type = isset ($_GET["type".$i]) ? $_GET["type".$i] : "" ;
+			if (!empty($nom)) {
+				$lesChamps[] = array( "nom" => $nom, "type" => $type);
+			}
+		}
+		// Créer la nouvelle table
+		$message = $DB_utilisateurs->creerTable($nomDuTiroir, $lesChamps);
+		if (empty($message)) {
+			$identifiant = $DB_utilisateurs->derniereTable;
+		}
 	}
 
 	// Construire la réponse et la retourner
@@ -41,8 +63,8 @@
 		"page" => "COM",
 		"cle" => $laCle,
 		"erreur" => $message,
-		"table" => "",
-		"data" => $listeDesTables);
+		"id" => $identifiant,
+		"table" => "");
 	echo json_encode($reponse, JSON_INVALID_UTF8_SUBSTITUTE);
 
 ?>

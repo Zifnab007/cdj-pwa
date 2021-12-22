@@ -4,14 +4,18 @@
 
 	$PATH_INCLUDE = 'include/';
 	include_once($PATH_INCLUDE."class.utilisateur.php");
+	include_once($PATH_INCLUDE."class.table.php");
 	include_once($PATH_INCLUDE."singleton.database.php");
 	include_once($PATH_INCLUDE."configuration.php");
 
 	$utilisateur = isset ($_GET['pseudo']) ? $_GET['pseudo'] : "" ;
 	$cle = isset ($_GET['cle']) ? $_GET['cle'] : "" ;
-	$laCle = "";
-	$message = "";
+	$tiroir = isset ($_GET['tiroir']) ? $_GET['tiroir'] : "" ;
 	$listeDesTables = [];
+	$laCle = "";
+	$nomTiroir = "";
+	$structure = "";
+	$lesObjets = [];
 
 	// Vérifier l'utilisateur
 	$DB_utilisateurs = new Utilisateurs();
@@ -30,19 +34,55 @@
 	if (empty($message)) {
 		$DB_utilisateurs->lireUtilisateur($utilisateur);
 		$laCle = $DB_utilisateurs->data["Cle"];
-//		print_r($DB_utilisateurs->bases);
 		$listeDesTables = $DB_utilisateurs->bases;
-//		print_r($DB_utilisateurs->data);
+		// Vérifier que la base n'existe pas pour cet utilisateur
+		$message = "Le tiroir ".$tiroir." n'existe pas.";
+		foreach ($DB_utilisateurs->bases as $table){
+			if ($table["id"] == $tiroir) {
+				$message = "";
+				$nomTiroir = $table["Nom"];
+				$structure = $table["Structure"];
+			}
+		}
+	}
+	if (empty($message)) {
+		// Lire le tiroir
+		$lesTiroirs = new Tiroir();
+		$message = $lesTiroirs->lireTiroir($DB_utilisateurs->id, $tiroir);
+		if (empty($message)) {
+			$laStructure = json_decode($structure);
+			foreach ($lesTiroirs->objets as $objet){
+				$unObjet["id"] = $objet["id"];
+				$unObjet["name"] = $objet["Nom"];
+				$unObjet["created_at"] = $objet["Creation"];
+				$unObjet["updated_at"] = $objet["MiseAJour"];
+				$unObjet["icon"] = "";
+				$unObjet["supprimer"] = $objet["supprimer"];
+				$unObjet["record"] = [];
+				$i = 0;
+				foreach ($laStructure as $champ){
+					$unObjet["record"][$champ->nom] = $objet["ch".$i];
+					$i++;
+				}
+				$lesObjets[] = $unObjet;
+			}
+		}
+	}
+       
+	if (!empty($message)) {
+		$tiroir = 0;
 	}
 
 	// Construire la réponse et la retourner
 	$reponse = array (
 		"pseudo" => $utilisateur,
-		"page" => "COM",
+		"page" => "TIR",
 		"cle" => $laCle,
 		"erreur" => $message,
-		"table" => "",
-		"data" => $listeDesTables);
+		"id" => $tiroir,
+		"table" => $nomTiroir,
+		"structure" => $structure,
+		"data" => $lesObjets);
 	echo json_encode($reponse, JSON_INVALID_UTF8_SUBSTITUTE);
 
 ?>

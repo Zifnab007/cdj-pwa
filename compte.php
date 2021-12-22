@@ -7,7 +7,7 @@
 	include_once($PATH_INCLUDE."singleton.database.php");
 	include_once($PATH_INCLUDE."configuration.php");
 
-	$utilisateur = isset ($_GET['user']) ? $_GET['user'] : "" ;
+	$utilisateur = isset ($_GET['pseudo']) ? $_GET['pseudo'] : "" ;
 	$eMail = isset ($_GET['email']) ? $_GET['email'] : "" ;
 	$motDePasse = isset ($_GET['mdp']) ? $_GET['mdp'] : "" ;
 	$laCle = "";
@@ -26,7 +26,7 @@
 		$message = $DB_utilisateurs->creerUtilisateur($utilisateur, $eMail, $motDePasse);
 	}
 	if (empty($message)) {
-		$laCle = $DB_utilisateurs->data->Cle;
+		$laCle = $DB_utilisateurs->data["Cle"];
 	}
 
 	// Construire la réponse et la retourner
