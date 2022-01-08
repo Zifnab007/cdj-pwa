@@ -35,6 +35,6 @@
 		"page" => 11,
 		"cle" => $laCle,
 		"erreur" => $message);
-	echo json_encode($reponse);
+	echo json_encode($reponse, JSON_INVALID_UTF8_SUBSTITUTE|JSON_PRESERVE_ZERO_FRACTION|JSON_UNESCAPED_LINE_TERMINATORS|JSON_UNESCAPED_SLASHES|JSON_UNESCAPED_UNICODE);
 
 ?>

@@ -161,6 +161,14 @@ function viderDonneePage(page) {
 			donnee["type"+i] = "";
 		}
 		lesPages["CRT"] = donnee;
+	} else if ("MOO" == page) {
+		let donnee = [];
+		donnee["id"] = "";
+		donnee["name"] = "";;
+		donnee["icon"] = "";
+		donnee["supprimer"] = 0;
+		donnee["record"] = [];
+		lesPages["MOO"] = donnee;
 	}
 }
 
@@ -179,6 +187,18 @@ function memoriserDonneePage() {
 			donnee["type"+i] = document.querySelector("#type"+i).value;
 		}
 		lesPages["CRT"] = donnee;
+	} else if ("MOO" == pageCourante()) {
+		let donnee = [];
+		donnee["id"] = document.querySelector("#elemId").value;
+		donnee["name"] = document.querySelector("#elemNom").value;
+		donnee["icon"] = "";
+		donnee["supprimer"] = 0;
+		let record = [];
+		laStructure.get().forEach(function (structure, index) {
+			record[structure.nom] = document.querySelector("#elem"+index).value;
+		});
+		donnee["record"] = record;
+		lesPages["MOO"] = donnee;
 	}
 }
 
@@ -219,6 +239,15 @@ function chapitreEnHTML(titre, texte) {
 	if ("" != titre) { TitreHTML = `<label class="label">${titre}</label>`; }
 	if ("" != texte) { TexteHTML = `${texte}<br/>`; }
 	return TitreHTML+TexteHTML;
+}
+
+function elementEnHTML(key, value){
+	let elementStr = "";
+	if (null != value) { 
+	elementStr = `<b>${key}</b> : ${value}<br/>
+`;
+	}
+	return elementStr;
 }
 
 function saisieEnHTML(titre, id, type, fond, valeur, aide) {
@@ -525,39 +554,35 @@ function genererPageCommode(json){
 // #################################
 // Génération de la page Tiroir ("TIR")
 //
-function afficherUnElement(key, value){
-	let elementStr = "";
-	if (null != value) { 
-	elementStr = `<b>${key}</b> : ${value}<br/>
-`;
-	}
-	return elementStr;
-}
-
 function genererPageTiroir(leTiroir){
 
 	tracer('appel de la fonction genererPageTiroir '+leTiroir.cle);
 //	tracerTable(leTiroir);
+	if ("MOO" == pageCourante()) { laPage.pop(); }
 
 	if (messageEstValide(leTiroir)) {
 
 		lesObjets.set(leTiroir.data);
 		leTiroirId.set(leTiroir.id);
 		nomDeLaTable.set(leTiroir.table);
-		laStructure.set(leTiroir.structure);
+		laStructure.set(JSON.parse(leTiroir.structure));
 
 		let html = "";
 
 		html += `
         <div class="section"> <div class="columns">`;
 
-//			tracerTable(lesObjets.get());
-		lesObjets.get().forEach(objet => {
-			html += `
+		if (0 == leTiroir.data.length) {
+			html += chapitreEnHTML("Le tiroir est vide.", "");
+		} else {
+			lesObjets.get().forEach(objet => {
+				html += `
           <div class="column">
             <div class="card has-background-white">
               <div class="card-content">
-                <div class="media">
+                <div class="media">`;
+				if ("" != objet.icon) {
+					html += `
                   <div class="media-lefti">
                     <figure class="image is-96x96">
                       <img class="has-background-info is-rounded"
@@ -565,42 +590,41 @@ function genererPageTiroir(leTiroir){
                         alt="Placeholder image"
                       />
                     </figure>
-                  </div>
+                  </div>`;
+				}
+				html += `
                   <div class="media-content">
                     <p class="title is-4">${objet.name}</p>
-                    <label class="input is-hidden">${objet.id}</label>
                     <div class="button" id="T${objet.id}">Modifier</div>
                   </div>
                 </div>
   
                 <div class="content">`;
 
-			for (const [key, value] of Object.entries(objet.record)) {
-				html += afficherUnElement(key, value); 
-			}
-//			tracerTable(objet);
+				for (const [key, value] of Object.entries(objet.record)) {
+					html += elementEnHTML(key, value); 
+				}
 
-			html += `
-                  <hr />
+				html += `
                   Créé le: <time datetime="${
                     objet.created_at
-                  }">${dateTimeFormat.format(new Date(objet.created_at))}</time>
-                  <br />
+                  }">${dateTimeFormat.format(new Date(objet.created_at))}</time>.
                   Dernière mise à jour: <time datetime="${
                     objet.updated_at
-                  }">${dateTimeFormat.format(new Date(objet.updated_at))}</time>
+                  }">${dateTimeFormat.format(new Date(objet.updated_at))}</time>.
                 </div>
               </div>
             </div>
-	  </div>
-	</div> </div>`;
-		});
-		html += "</div></div>";
+	  </div>`;
+			});
+		}
+		html += `
+        </div></div>`;
                 document.querySelector(".container").innerHTML = html;
 		document.querySelector(".title").innerHTML = nomDuSite+" : "+leTiroir.table;
 
 		lesObjets.get().forEach(objet => {
-			tracer("test creation objet "+objet.id);
+			tracer("test modification objet "+objet.id);
 			document.querySelector("#T"+objet.id).onclick = function() {genererPageObjet(objet);};
 		});
 		enregistrerNouvellePage("TIR",[]);
@@ -679,7 +703,7 @@ function genererPageNouveauTiroir(){
 
 	for (var i=0;i<4;i++) {
 		html += saisieEnHTML("Nom du champ", "nom"+i, "text", "Nom du champ", tiroir["nom"+i], "");
-		html += choixEnHTML("Type du champ", "type"+i, ["DATETIME", "INT", "TEXT"], tiroir["type"+i], "");
+		html += choixEnHTML("Type du champ", "type"+i, ["DATE", "ENTIER", "TEXTE", "BOOLEEN"], tiroir["type"+i], "");
 	}
 
 	html += "</div></div>";
@@ -698,6 +722,7 @@ function genererPageNouveauTiroir(){
 //
 // Demander au server l'enregistrement
 function demanderEnregistrement() {
+	memoriserDonneePage();
 	const url = new Adresse(window.location.href,'objet'+extention);
 	url.add("pseudo", lUtilisateur.get());
 	url.add("cle", laCle.get());
@@ -705,15 +730,13 @@ function demanderEnregistrement() {
 	let commande = "";
 	let jsonCmd = new Object();
 	let jsonRecord = new Object();
-	jsonCmd["id"] = 0;
-	jsonCmd["node_id"] = 0;
-	jsonCmd["name"] = 0;
-	jsonCmd["icon"] = "images/icons/icon-96x96.png";
+	jsonCmd["id"] = document.querySelector("#elemId").value;
+	jsonCmd["name"] = document.querySelector("#elemNom").value;
+	jsonCmd["icon"] = "";
 	jsonCmd["supprimer"] = 0;
 	laStructure.get().forEach(function (structure, index) {
-		jsonRecord[structure.Nom] = document.querySelector("#elem"+index).value;
+		jsonCmd[structure.nom] = document.querySelector("#elem"+index).value;
 	});
-	jsonCmd["record"] = jsonRecord;
 	lObjet.set(jsonCmd);
 	tracer(JSON.stringify(jsonCmd));
 	commande = JSON.stringify(jsonCmd);
@@ -740,9 +763,6 @@ function genererPageObjet(objet){
 		if (null == objet.id) {texte = ""} else {texte = objet.id};
 		html += `
               <input id="elemId" class="input is-success is-hidden" type="text" placeholder="" value="${texte}">`;
-		if (null == objet.node_id) {texte = ""} else {texte = objet.node_id};
-		html += `
-              <input id="elemNodeId" class="input is-success is-hidden" type="text" placeholder="" value="${texte}">`;
 		if (null == objet.name) {texte = ""} else {texte = objet.name};
 		html += `
               <div class="field">
@@ -758,12 +778,13 @@ function genererPageObjet(objet){
                 </div>
               </div>`;
 
+	tracerTable(laStructure);
 		laStructure.get().forEach(function (structure, index) {
 //			tracerTable(objet);
-			if (null == objet.record[structure.Nom]) {texte = ""} else {texte = objet.record[structure.Nom]};
+			if (null == objet.record[structure.nom]) {texte = ""} else {texte = objet.record[structure.nom]};
 			html += `
               <div class="field">
-                <label class="label">${structure.Nom}</label>
+                <label class="label">${structure.nom} (${structure.type})</label>
                 <div class="control has-icons-left has-icons-right">
                   <input id="elem${index}" class="input is-success" type="text" placeholder="" value="${texte}">
                   <span class="icon is-small is-left">
@@ -803,14 +824,15 @@ function genererPageNouvelObjet(){
 	let objet = new Object();
 	let record = new Object();
 	objet["id"] = null;
-	objet["node_id"] = null;
 	objet["name"] = null;
 	objet["icon"] = null;
 	objet["supprimer"] = 0;
 	laStructure.get().forEach(function (structure, index) {
-		record[structure.Nom] = null;
+		record[structure.nom] = null;
 	});
+	tracerTable(record);
 	objet["record"] = record;
+	tracerTable(objet);
 	lObjet.reset();
 
 	genererPageObjet(objet);
@@ -900,9 +922,17 @@ function genererInformation() {
 
 	let utilisateur = lUtilisateur.get();
 	if (null == utilisateur) { utilisateur = "non connecté"; }
-	let LeServiceWorker = "indéfini";
+	let stokageLocal = "Indisponible.";
+	if ("localStorage" in window) {
+		stokageLocal = "Disponible.";
+	}
+	let DBLocale = "Indisponible.";
+	if ("indexedDB" in window) {
+		DBLocale = "Actif.";
+	}
+	let LeServiceWorker = "Indisponible.";
 	if ("serviceWorker" in navigator) {
-		LeServiceWorker = "actif";
+		LeServiceWorker = "Actif.";
 	}
 
 	let html = `
@@ -910,9 +940,13 @@ function genererInformation() {
 
             <div class="box">`;
 
-	html += chapitreEnHTML("Utilisateur :", utilisateur);
+	html += elementEnHTML("Utilisateur :", utilisateur);
 
-	html += chapitreEnHTML("Service worker :", LeServiceWorker);
+	html += elementEnHTML("Stokage local :", stokageLocal);
+
+	html += elementEnHTML("IndexedDB :", DBLocale);
+
+	html += elementEnHTML("Service worker :", LeServiceWorker);
 
 	html += `
 	      Ce site est hébergé sur PlanetHost.<br/>
@@ -963,6 +997,9 @@ function generateUI(){
 		fetch(url.get())
 			.then(response => response.json(), err => console.error('ERREUR Une erreur lors du fetch ' + url.href + ' : ' + err))
 			.then(json => genererPageTiroir(json) );
+	} else if ("MOO" == pageCourante()) {
+		// Regéné la pasge de modification d'un objet
+		genererPageObjet(lesPages["MOO"]);
 	} else {
 		// afficher un page pour se connecter
 		tracer("La page n'est pas définie");

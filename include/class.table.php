@@ -82,6 +82,24 @@ class table
   // ISREF
   // **********************
 
+  function exist()
+  {
+
+
+	  $Exist = FALSE;
+	  $sql =  "SHOW TABLES LIKE  '$this->maTable';";
+
+	  if ($this->database->query($sql))  {
+
+		  $Result = $this->database->result;
+		  $Exist = ($data = mysqli_fetch_array($Result));
+		  mysqli_free_result($Result);
+
+	  }
+
+	  return $Exist;
+  }
+
   function isPresent($fieldName, $reference)
   {
 
@@ -379,7 +397,18 @@ class table
   {
 	  $sql = " CREATE TABLE `".$this->maTable."` ( `id` INT NOT NULL AUTO_INCREMENT ";
 	  foreach ($fields as $value) {
-		$sql = $sql.", `".$value["nom"]."` ".$value["type"]." DEFAULT NULL ";
+		  if ("DATE" == $value["type"]) {
+			  $type = "datetime DEFAULT NULL";
+		  } else if ("ENTIER" == $value["type"]) {
+			  $type = "int(11) DEFAULT NULL";
+		  } else if ("TEXTE" == $value["type"]) {
+			  $type = "text CHARACTER SET utf8 COLLATE utf8_unicode_ci DEFAULT NULL";
+		  } else if ("BOOLEEN" == $value["type"]) {
+			  $type = "tinyint(1) DEFAULT 0";
+		  } else {
+			  $type = "tinyint(1) DEFAULT 0";
+		  }
+		$sql = $sql.", `".$value["nom"]."` ".$type." ";
 	  }
 	  $sql = $sql.", PRIMARY KEY (`id`)) ENGINE = MyISAM;";
 	  return $this->database->query($sql);

@@ -35,7 +35,7 @@
 		$listeDesTables = $DB_utilisateurs->bases;
 		// Vérifier que la base n'existe pas pour cet utilisateur
 		foreach ($DB_utilisateurs->bases as $table){
-			if ($table->Nom == $nomDuTiroir) { $message = "Le tiroir ".$nomDuTiroir." existe déjà."; }
+			if ($table["Nom"] == $nomDuTiroir) { $message = "Le tiroir ".$nomDuTiroir." existe déjà."; }
 		}
 	}
 	if (empty($message)) {
@@ -65,6 +65,6 @@
 		"erreur" => $message,
 		"id" => $identifiant,
 		"table" => "");
-	echo json_encode($reponse, JSON_INVALID_UTF8_SUBSTITUTE);
+	echo json_encode($reponse, JSON_INVALID_UTF8_SUBSTITUTE|JSON_PRESERVE_ZERO_FRACTION|JSON_UNESCAPED_LINE_TERMINATORS|JSON_UNESCAPED_SLASHES|JSON_UNESCAPED_UNICODE);
 
 ?>

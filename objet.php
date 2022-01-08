@@ -11,16 +11,22 @@
 	$utilisateur = isset ($_GET['pseudo']) ? $_GET['pseudo'] : "" ;
 	$cle = isset ($_GET['cle']) ? $_GET['cle'] : "" ;
 	$tiroir = isset ($_GET['tiroir']) ? $_GET['tiroir'] : "" ;
+	$objetCree = isset ($_GET['objet']) ? $_GET['objet'] : "" ;
 	$listeDesTables = [];
 	$laCle = "";
 	$nomTiroir = "";
 	$structure = "";
+	$laStructure = "";
 	$lesObjets = [];
 
 	// Vérifier l'utilisateur
 	$DB_utilisateurs = new Utilisateurs();
 
-	if (empty($utilisateur)) {
+	if (empty($tiroir)) {
+		$message = "Le tiroir n'est pas valide.";
+	} else if (empty($objetCree)) {
+		$message = "La commande n'est pas valide.";
+	} else if (empty($utilisateur)) {
 		$message = "Le pseudo est vide.";
 	} else if (empty($cle)) {
 		$message = "La clé est vide.";
@@ -35,22 +41,39 @@
 		$DB_utilisateurs->lireUtilisateur($utilisateur);
 		$laCle = $DB_utilisateurs->data["Cle"];
 		$listeDesTables = $DB_utilisateurs->bases;
-		// Vérifier que la base n'existe pas pour cet utilisateur
+		// Vérifier que la base existe pour cet utilisateur
 		$message = "Le tiroir ".$tiroir." n'existe pas.";
 		foreach ($DB_utilisateurs->bases as $table){
 			if ($table["id"] == $tiroir) {
 				$message = "";
 				$nomTiroir = $table["Nom"];
 				$structure = $table["Structure"];
+				$laStructure = json_decode($structure);
 			}
 		}
 	}
 	if (empty($message)) {
-		// Lire le tiroir
 		$lesTiroirs = new Tiroir();
-		$message = $lesTiroirs->lireTiroir($DB_utilisateurs->id, $tiroir);
 		if (empty($message)) {
-			$laStructure = json_decode($structure);
+			$lObjet = [];
+			$objetDansTable = [];
+			$lObjet = json_decode($objetCree, true);
+			$idObjet = $lObjet["id"];
+			$objetDansTable["Nom"] = $lObjet["name"];
+			$objetDansTable["Creation"] = date('Y-m-d H:i:s');
+			$objetDansTable["MiseAJour"] = date('Y-m-d H:i:s');
+			$objetDansTable["Photo"] = $lObjet["icon"];
+			$objetDansTable["supprimer"] = $lObjet["supprimer"];
+			$i = 0;
+			foreach ($laStructure as $champ){
+				$objetDansTable["ch".$i] = $lObjet[$champ->nom];
+				$i++;
+			}
+			$message = $lesTiroirs->nouvelObjet($DB_utilisateurs->id, $tiroir, $idObjet, $objetDansTable);
+		}
+		if (empty($message)) {
+		// Lire le tiroir
+		$message = $lesTiroirs->lireTiroir($DB_utilisateurs->id, $tiroir);
 			foreach ($lesTiroirs->objets as $objet){
 				$unObjet["id"] = $objet["id"];
 				$unObjet["name"] = $objet["Nom"];

@@ -42,16 +42,41 @@ class Tiroir
                 $this->objets = [];
                 $this->id = 0;
                 $leTiroir = new table($this->nom($idUtilisateur, $idTiroir));
-                if ($leTiroir->selectAll()) {
-                        $this->data = $leTiroir->data;
-                        $this->objets[] = $leTiroir->data;
-                        $index = 1;
-                        while (($index < TABLE_MAX) && $leTiroir->selectNext()) {
-                                $index++;
-                                $this->objets[] = $lesbases->data;
-                        }
-                } else {
-                        $message = "Le tiroir n'est pas lisible.";
+		if ($leTiroir->exist()) {
+                	if ($leTiroir->selectAll()) {
+                        	$this->objets[] = $leTiroir->data;
+                        	$index = 1;
+                        	while (($index < TABLE_MAX) && $leTiroir->selectNext()) {
+                                	$index++;
+                                	$this->objets[] = $leTiroir->data;
+                        	}
+			}
+		} else {
+			$message = "Le tiroir ".$idTiroir." n'existe pas.";
+                }
+                return $message;
+        }
+
+        function nouvelObjet($idUtilisateur, $idTiroir, $idObjet, $objet)
+        {
+                $message = "";
+                $this->objets = [];
+                $this->id = 0;
+                $leTiroir = new table($this->nom($idUtilisateur, $idTiroir));
+		if ($leTiroir->exist()) {
+			if (empty($idObjet)) {
+				if (!$leTiroir->insert($objet)) {
+                			$message = "Imposible de creer un objet.";
+				}
+			} else if ($leTiroir->isPresent("id", $idObjet)) {
+                		if ($leTiroir->update("id", $idObjet, $objet)) {
+                			$message = "Imposible de mettre a jour l'objet ".$idObjet.".";
+				}
+			} else {
+                		$message = "L'objet ".$idObjet." n'existe pas.";
+			}
+		} else {
+			$message = "Le tiroir ".$idTiroir." n'existe pas.";
                 }
                 return $message;
         }
@@ -65,16 +90,16 @@ class Tiroir
                 $laTable['Ecrivain'] = $idUtilisateur;
                 $laTable['Creation'] = date('Y-m-d H:i:s');
                 $laTable['MiseAJour'] = date('Y-m-d H:i:s');
-                $laTable['Structure'] = json_encode($lesChamps, JSON_INVALID_UTF8_SUBSTITUTE);
+                $laTable['Structure'] = json_encode($lesChamps, JSON_INVALID_UTF8_SUBSTITUTE|JSON_PRESERVE_ZERO_FRACTION|JSON_UNESCAPED_LINE_TERMINATORS|JSON_UNESCAPED_SLASHES|JSON_UNESCAPED_UNICODE);
                 if ($lesbases->insert($laTable)) {
                         $champ = [];
                         $this->id = mysqli_insert_id($lesbases->database->link);
                         $nouvelleTable = new table($this->nom($idUtilisateur, $this->id));
-                        $champs[] = array( "nom" => "Nom", "type" => "TEXT");
-                        $champs[] = array( "nom" => "Creation", "type" => "DATETIME");
-                        $champs[] = array( "nom" => "MiseAJour", "type" => "DATETIME");
-                        $champs[] = array( "nom" => "Photo", "type" => "TEXT");
-                        $champs[] = array( "nom" => "supprimer", "type" => "BOOLEAN");
+                        $champs[] = array( "nom" => "Nom", "type" => "TEXTE");
+                        $champs[] = array( "nom" => "Creation", "type" => "DATE");
+                        $champs[] = array( "nom" => "MiseAJour", "type" => "DATE");
+                        $champs[] = array( "nom" => "Photo", "type" => "TEXTE");
+                        $champs[] = array( "nom" => "supprimer", "type" => "BOOLEEN");
                         $index = 0;
                         foreach ($lesChamps as $value) {
                                 $champs[] = array( "nom" => "ch".$index, "type" => $value["type"]);
