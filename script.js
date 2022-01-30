@@ -17,80 +17,47 @@
 // generateUI
 import { extention } from "./config.js";
 import { tracer, tracerTable } from "./traceur.js";
+import { Enregistreur } from "./enregistreur.js";
+import { Adresse } from "./adresse.js";
+import { Pages } from "./pages.js";
+
+
 //
 // Données et function principale
 //
-// Classe Enregistreur pour stoker les données et les restituer
-class Enregistreur {
-	constructor (selecteur) {
-		this.donnee = null;
-		this.selecteur = selecteur;
-	}
-	get () {
-		tracer('enregistreur '+this.selecteur+' get '+this.donnee);
-		return this.donnee;
-	}
-	set (donnee) {
-		this.donnee = donnee;
-		tracer('enregistreur '+this.selecteur+' set '+this.donnee);
-	}
-	reset () {
-		this.donnee = null;
-		tracer('enregistreur '+this.selecteur+' reset ');
-	}
-}
 
-// Classe "Adresse" pour construire les requêttes
-class Adresse {
-	constructor (base, page) {
-		this.name = base+"/"+page;
-	}
-	get() {
-		return this.name;
-	}
-	add(cle, valeur) {
-		let urlLocale = ""
-		if (-1 == this.name.indexOf("?")) {
-			urlLocale = this.name+"?";
-		} else {
-			urlLocale = this.name+"&";
-		}
-		this.name=urlLocale+cle+"="+valeur;
-	}
+// Mémoriser la configuration du navigateur
+var stockage = false;
+if ("localStorage" in window) {
+	stockage = true;
 }
 
 var laPage = [];
-var lesPages = [];
-lesPages["CON"] = [];
-lesPages["CMP"] = [];
-viderDonneePage("CMP");
-lesPages["VAL"] = [];
-lesPages["COM"] = [];
-lesPages["TIR"] = [];
-lesPages["CRT"] = [];
-viderDonneePage("CRT");
-lesPages["MOT"] = [];
-lesPages["SUT"] = [];
-lesPages["OBJ"] = [];
-lesPages["CRO"] = [];
-lesPages["MOO"] = [];
-lesPages["SUO"] = [];
-lesPages["ERR"] = [];
-lesPages["FAT"] = [];
-lesPages["INF"] = [];
+var lesPages = new Pages(stockage);
 
-var laCle = new Enregistreur("cle");
-var lUtilisateur = new Enregistreur("utilisateur");
-var leTiroirId = new Enregistreur("tiroirId");
-var nomDeLaTable = new Enregistreur("tableNom");
-var lesObjets = new Enregistreur("table");
-var lObjet = new Enregistreur("objet");
-var laStructure = new Enregistreur("structure")
+var laCle = new Enregistreur("cle", stockage);
+var lUtilisateur = new Enregistreur("utilisateur", stockage);
+var leTiroirId = new Enregistreur("tiroirId", stockage);
+var nomDeLaTable = new Enregistreur("tableNom", stockage);
+var lesObjets = new Enregistreur("table", stockage);
+var lObjet = new Enregistreur("objet", stockage);
+var laStructure = new Enregistreur("structure", stockage)
 var nomDuSite = "La commode de Julie";
 
 document.addEventListener("DOMContentLoaded", function() {
-tracer('DOMContentLoaded event');
-generateUI();
+	tracer('DOMContentLoaded event');
+	if (stockage) {
+		var pageStockee = localStorage.getItem('laPage');
+		if (null != pageStockee) {
+			laPage = JSON.parse(pageStockee);
+			tracer("Restauration de l'historique des pages avec "+laPage.length+' element');
+		}
+	}
+	generateUI();
+});
+window.addEventListener("unload", function() {
+	tracer('onunload event');
+	memoriserDonneePage();
 });
 
 // ######
@@ -107,23 +74,10 @@ function pageCourante() {
 	}
 }
 
-function donneePageCourante() {
-	tracer('nombre de page '+laPage.length);
-	if (0 == laPage.length) {
-		return [];
-	} else {
-		return laPage[laPage.length-1];
-	}
-}
-
-function enregistrerNouvellePage(page) {
+function declarerNouvellePage(page) {
 	// Vider l'historique lorsqu'on reviens sur la page de connexion
 	if ("CON" == page) {
 		while (laPage.length > 0) {laPage.pop()}
-	}
-	// Mémoriser la page si elle est nouvelle
-	if ((0 == laPage.length) || (pageCourante() != page)) {
-		laPage.push(page);
 	}
 	// activer ou désactiver les boutons
 	if (("CON" == page) || ("FAT" == page)) {
@@ -137,68 +91,54 @@ function enregistrerNouvellePage(page) {
 		document.querySelector("#creerTiroir").className = "button is-link is-hidden";
 	}
 	if ("TIR" == page) {
+		if ("MOO" == pageCourante()) { laPage.pop(); }
 		document.querySelector("#creerObjet").className = "button is-link is-flex";
 	} else {
 		document.querySelector("#creerObjet").className = "button is-link is-hidden";
 	}
+	// Mémoriser la page si elle est nouvelle
+	if ((0 == laPage.length) || (pageCourante() != page)) {
+		laPage.push(page);
+	}
 	tracer('nombre de page '+laPage.length+' page demandée '+page+' dernière '+pageCourante());
 	tracerTable(laPage);
-}
-
-function viderDonneePage(page) {
-	let donnee = [];
-	if ("CMP" == page) {
-		// Page CMP
-		donnee["pseudo"] = "";
-		donnee["email"] = "";
-		donnee["mdp"] = "";
-		lesPages["CMP"] = donnee;
-	} else if ("CRT" == page) {
-		// Page CRT
-		donnee["nom"] = "";
-		for (var i=0;i<4;i++) {
-			donnee["nom"+i] = "";
-			donnee["type"+i] = "";
-		}
-		lesPages["CRT"] = donnee;
-	} else if ("MOO" == page) {
-		let donnee = [];
-		donnee["id"] = "";
-		donnee["name"] = "";;
-		donnee["icon"] = "";
-		donnee["supprimer"] = 0;
-		donnee["record"] = [];
-		lesPages["MOO"] = donnee;
-	}
+	if (stockage) {
+		localStorage.setItem('laPage', JSON.stringify(laPage));
+	};
 }
 
 function memoriserDonneePage() {
 	if ("CMP" == pageCourante()) {
-		let donnee = [];
+		let donnee = new Object();
 		donnee["pseudo"] = document.querySelector("#pseudo").value;
 		donnee["email"] = document.querySelector("#eMail").value;
 		donnee["mdp"] = document.querySelector("#motDePasse").value;
-		lesPages["CMP"] = donnee;
+		lesPages.nouvellePage("CMP", donnee);
+		tracer('memoriserDonneePage '+donnee.length+' element');
 	} else if ("CRT" == pageCourante()) {
-		let donnee = [];
+		let donnee = new Object();
 		donnee["nom"] = document.querySelector("#base").value;
 		for (var i=0;i<4;i++) {
 			donnee["nom"+i] = document.querySelector("#nom"+i).value;
 			donnee["type"+i] = document.querySelector("#type"+i).value;
 		}
-		lesPages["CRT"] = donnee;
+		lesPages.nouvellePage("CRT", donnee);
 	} else if ("MOO" == pageCourante()) {
-		let donnee = [];
+		let donnee = new Object();
 		donnee["id"] = document.querySelector("#elemId").value;
 		donnee["name"] = document.querySelector("#elemNom").value;
 		donnee["icon"] = "";
 		donnee["supprimer"] = 0;
-		let record = [];
+		let champsLibres = [];
 		laStructure.get().forEach(function (structure, index) {
-			record[structure.nom] = document.querySelector("#elem"+index).value;
+tracer('MOO '+structure.nom+" a l'index "+index);
+			champsLibres[index] = document.querySelector("#elem"+index).value;
 		});
-		donnee["record"] = record;
-		lesPages["MOO"] = donnee;
+tracerTable(champsLibres);
+tracerTable(donnee);
+tracer('MOO taille champsLibres'+champsLibres.length);
+		donnee["champsLibres"] = champsLibres;
+		lesPages.nouvellePage("MOO", donnee);
 	}
 }
 
@@ -275,9 +215,9 @@ function choixEnHTML(titre, id, choix, selection, aide) {
 		  <div class="select">
 			<select id="${id}" class="input is-success">`;
 	for (var y in choix) {
-		if (y == selection) {
+		if (choix[y] == selection) {
 			html += `
-				<option value="${y}">${y}</option selected>`;
+				<option value="${choix[y]}" selected>${choix[y]}</option>`;
 		} else {
 			html += `
 				<option value="${choix[y]}">${choix[y]}</option>`;
@@ -332,6 +272,7 @@ function validerConnexion(json) {
 function genererPageConnexion(){
 
 	tracer('appel de la fonction genererPageConnexion');
+	if (stockage) { localStorage.clear(); }
 	laCle.reset();
 	lUtilisateur.reset();
 
@@ -369,7 +310,7 @@ function genererPageConnexion(){
 	document.querySelector(".title").innerHTML = nomDuSite;
 	document.querySelector("#creerCompte").onclick = genererPageCompte;
 	document.querySelector("#demanderConnexion").onclick = demanderConnexion;
-	enregistrerNouvellePage("CON",[]);
+	declarerNouvellePage("CON");
 	tracer("La page CONNEXION (CON) est chargée");
 }
 
@@ -397,8 +338,8 @@ function demanderCreationCompte() {
 function genererPageCompte(){
 
 	tracer('appel de la fonction genererPageCompte');
-	let pseudo = lesPages["CMP"]["pseudo"];
-	let email = lesPages["CMP"]["email"];
+	let pseudo = lesPages.lireElement("CMP", "pseudo");
+	let email = lesPages.lireElement("CMP", "email");
 	let mdp = "";
 
 	let html = `
@@ -425,7 +366,7 @@ function genererPageCompte(){
 	document.querySelector(".container").innerHTML = html;
 	document.querySelector(".title").innerHTML = nomDuSite;
 	document.querySelector("#demanderCreationCompte").onclick = demanderCreationCompte;
-	enregistrerNouvellePage("CMP",[]);
+	declarerNouvellePage("CMP");
 	tracer("La page COMPTE (CMP) est chargée");
 
 }
@@ -458,7 +399,7 @@ function genererPageValidation(json){
 
 		document.querySelector(".container").innerHTML = html;
 		document.querySelector(".title").innerHTML = nomDuSite;
-		enregistrerNouvellePage("VAL",[]);
+		declarerNouvellePage("VAL");
 		tracer("La page VALIDATION (VAL) est chargée");
 	}
 
@@ -541,7 +482,7 @@ function genererPageCommode(json){
 			tracer("test creation onclick "+tiroir.id);
 			document.querySelector("#T"+tiroir.id).onclick = function() {demanderOuvrirTiroir(tiroir.id);};
 		});
-		enregistrerNouvellePage("COM",[]);
+		declarerNouvellePage("COM");
 
 		tracer("La page COMMODE (COM) est chargée");
 
@@ -558,7 +499,6 @@ function genererPageTiroir(leTiroir){
 
 	tracer('appel de la fonction genererPageTiroir '+leTiroir.cle);
 //	tracerTable(leTiroir);
-	if ("MOO" == pageCourante()) { laPage.pop(); }
 
 	if (messageEstValide(leTiroir)) {
 
@@ -627,7 +567,7 @@ function genererPageTiroir(leTiroir){
 			tracer("test modification objet "+objet.id);
 			document.querySelector("#T"+objet.id).onclick = function() {genererPageObjet(objet);};
 		});
-		enregistrerNouvellePage("TIR",[]);
+		declarerNouvellePage("TIR");
 
 		tracer("La page TIROIR (TIR) est chargée");
 
@@ -676,8 +616,6 @@ function genererPageNouveauTiroir(){
 
 	tracer('appel de la fonction genererPageNouveauTiroir ');
 
-	let tiroir = lesPages["CRT"];
-
 	let html = `
           <div class="column">
 
@@ -691,7 +629,7 @@ function genererPageNouveauTiroir(){
 	      </div>`;
 
 	html += chapitreEnHTML("Créer un nouveau tiroir:", "");
-	html += saisieEnHTML("Nom du tiroir", "base", "text", "Nom du tiroir", tiroir["nom"], "");
+	html += saisieEnHTML("Nom du tiroir", "base", "text", "Nom du tiroir", lesPages.lireElement("CRT", "nom"), "");
 	html += `
 	    <hr/>`;
 
@@ -702,8 +640,8 @@ function genererPageNouveauTiroir(){
 	html += chapitreEnHTML("Décrire les autres champs d'un objet du tiroir:", "");
 
 	for (var i=0;i<4;i++) {
-		html += saisieEnHTML("Nom du champ", "nom"+i, "text", "Nom du champ", tiroir["nom"+i], "");
-		html += choixEnHTML("Type du champ", "type"+i, ["DATE", "ENTIER", "TEXTE", "BOOLEEN"], tiroir["type"+i], "");
+		html += saisieEnHTML("Nom du champ", "nom"+i, "text", "Nom du champ", lesPages.lireElement("CRT", "nom"+i), "");
+		html += choixEnHTML("Type du champ", "type"+i, ["DATE", "ENTIER", "TEXTE", "BOOLEEN"], lesPages.lireElement("CRT", "type"+i), "");
 	}
 
 	html += "</div></div>";
@@ -712,7 +650,7 @@ function genererPageNouveauTiroir(){
 	document.querySelector(".title").innerHTML = nomDuSite;
 	document.querySelector("#demanderCreationTiroir").onclick = demanderCreationTiroir;
 
-	enregistrerNouvellePage("CRT",[]);
+	declarerNouvellePage("CRT");
 
 	tracer("La page NOUVEAU TIROIR (CRT) est chargée");
 
@@ -781,7 +719,7 @@ function genererPageObjet(objet){
 	tracerTable(laStructure);
 		laStructure.get().forEach(function (structure, index) {
 //			tracerTable(objet);
-			if (null == objet.record[structure.nom]) {texte = ""} else {texte = objet.record[structure.nom]};
+			if (null == objet.champsLibres[index]) {texte = ""} else {texte = objet.champsLibres[index]};
 			html += `
               <div class="field">
                 <label class="label">${structure.nom} (${structure.type})</label>
@@ -811,7 +749,7 @@ function genererPageObjet(objet){
 		document.querySelector(".title").innerHTML = nomDuSite+" : "+nomDeLaTable.get();
 		document.querySelector("#demanderEnregistrement").onclick = demanderEnregistrement;
 
-		enregistrerNouvellePage("MOO",[]);
+		declarerNouvellePage("MOO");
 
 		tracer("La page MODIFIER ELEMENT (MOO) est chargée");
 
@@ -822,16 +760,16 @@ function genererPageNouvelObjet(){
 	tracer('appel de la fonction genererPageNouvelObjet ');
 
 	let objet = new Object();
-	let record = new Object();
+	let champsLibres = new Object();
 	objet["id"] = null;
 	objet["name"] = null;
 	objet["icon"] = null;
 	objet["supprimer"] = 0;
 	laStructure.get().forEach(function (structure, index) {
-		record[structure.nom] = null;
+		champsLibres[structure.nom] = null;
 	});
-	tracerTable(record);
-	objet["record"] = record;
+	tracerTable(champsLibres);
+	objet["champsLibres"] = champsLibres;
 	tracerTable(objet);
 	lObjet.reset();
 
@@ -843,7 +781,7 @@ function genererPageNouvelObjet(){
 // Génération de la page d'erreur ("ERR")
 //
 // Generer la page
-function genererPageErreur(erreur, info){
+function genererPageErreur(erreur = "ERREUR INDEFINIE", info = "Aucun information"){
 
 	tracer('appel de la fonction genererPageErreur');
 
@@ -866,14 +804,14 @@ function genererPageErreur(erreur, info){
           </div>`;
 
 	document.querySelector(".container").innerHTML = html;
-	enregistrerNouvellePage("ERR",[]);
+	declarerNouvellePage("ERR");
 	tracer("La page ERREUR (ERR) est chargée");
 }
 // ###################################
 // Génération de la page d'erreur fatale ("FAT")
 //
 // Generer la page
-function genererPageFatal(erreur, info){
+function genererPageFatal(erreur = "ERREUR FATALE INDEFINIE", info = "Aucun information"){
 
 	tracer('appel de la fonction genererPageFatal');
 
@@ -907,7 +845,7 @@ function genererPageFatal(erreur, info){
 
 	document.querySelector(".container").innerHTML = html;
 	document.querySelector("#revenirConnexion").onclick = genererPageConnexion;
-	enregistrerNouvellePage("FAT",[]);
+	declarerNouvellePage("FAT");
 	tracer("La page FATAL (FAT) est chargée");
 }
 
@@ -957,7 +895,7 @@ function genererInformation() {
           </div>`;
 
 	document.querySelector(".container").innerHTML = html;
-	enregistrerNouvellePage("INF",[]);
+	declarerNouvellePage("INF");
 	tracer("La page ERREUR (INF) est chargée");
 
 }
@@ -970,10 +908,7 @@ function generateUI(){
 	tracer('Appel de la fonction generateUI');
 
 	tracer('charger la page '+pageCourante());
-	if ("CON" == pageCourante()) {
-		// afficher un page pour se connecter
-		genererPageConnexion();
-	} else if ("COM" == pageCourante()) {
+	if ("COM" == pageCourante()) {
 		// Charger les info pour afficher la commode
 		const url = new Adresse(window.location.href,'commode'+extention);
 		url.add("pseudo", lUtilisateur.get());
@@ -981,12 +916,27 @@ function generateUI(){
 		fetch(url.get())
 			.then(response => response.json(), err => console.error('ERREUR Une erreur lors du fetch commode.php : ' + err))
 			.then(json => genererPageCommode(json) );
+	} else if ("CON" == pageCourante()) {
+		// afficher un page pour se connecter
+		genererPageConnexion();
 	} else if ("CMP" == pageCourante()) {
 		// Afficher la céation d'un compte
 		genererPageCompte();
 	} else if ("CRT" == pageCourante()) {
 		// Charger les info pour afficher la creation d'un tiroir
 		genererPageNouveauTiroir();
+	} else if ("ERR" == pageCourante()) {
+		// Afficher la page d'erreur fatale
+		genererPageErreur("INCONUE", "Une erreur non enregistrée était levée lors de la dernière utilisation du site");
+	} else if ("MOO" == pageCourante()) {
+		// Regéné la pasge de modification d'un objet
+		genererPageObjet(lesPages.lirePage("MOO"));
+	} else if ("INF" == pageCourante()) {
+		// Afficher la page d'information
+		genererInformation();
+	} else if ("FAT" == pageCourante()) {
+		// Afficher la page d'erreur fatale
+		genererPageFatal("INCONUE", "Une erreur fatale non enregistrée était levée lors de la dernière utilisation du site");
 	} else if ("TIR" == pageCourante()) {
 		// Charger les info pour afficher le tiroir
 		const url = new Adresse(window.location.href,'tiroir'+extention);
@@ -997,9 +947,6 @@ function generateUI(){
 		fetch(url.get())
 			.then(response => response.json(), err => console.error('ERREUR Une erreur lors du fetch ' + url.href + ' : ' + err))
 			.then(json => genererPageTiroir(json) );
-	} else if ("MOO" == pageCourante()) {
-		// Regéné la pasge de modification d'un objet
-		genererPageObjet(lesPages["MOO"]);
 	} else {
 		// afficher un page pour se connecter
 		tracer("La page n'est pas définie");
