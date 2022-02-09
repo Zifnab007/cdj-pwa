@@ -20,11 +20,16 @@ import { tracer, tracerTable } from "./traceur.js";
 import { Enregistreur } from "./enregistreur.js";
 import { Adresse } from "./adresse.js";
 import { Pages } from "./pages.js";
+import { FormateurCommode } from "./formateurCommode.js";
+import { FormateurPetitTiroir } from "./formateurPetitTiroir.js";
+import { FormateurGrandTiroir } from "./formateurGrandTiroir.js";
 
 
 //
 // Données et function principale
 //
+// Configuration
+const nbMaxAvantAffichageCompact = 4;
 
 // Mémoriser la configuration du navigateur
 var stockage = false;
@@ -306,7 +311,7 @@ function genererPageConnexion(){
 
           </div>`;
 
-	document.querySelector(".container").innerHTML = html;
+	document.querySelector(".corpDePage").innerHTML = html;
 	document.querySelector(".title").innerHTML = nomDuSite;
 	document.querySelector("#creerCompte").onclick = genererPageCompte;
 	document.querySelector("#demanderConnexion").onclick = demanderConnexion;
@@ -363,7 +368,7 @@ function genererPageCompte(){
 
            </div>`;
 
-	document.querySelector(".container").innerHTML = html;
+	document.querySelector(".corpDePage").innerHTML = html;
 	document.querySelector(".title").innerHTML = nomDuSite;
 	document.querySelector("#demanderCreationCompte").onclick = demanderCreationCompte;
 	declarerNouvellePage("CMP");
@@ -397,7 +402,7 @@ function genererPageValidation(json){
 
           </div>`;
 
-		document.querySelector(".container").innerHTML = html;
+		document.querySelector(".corpDePage").innerHTML = html;
 		document.querySelector(".title").innerHTML = nomDuSite;
 		declarerNouvellePage("VAL");
 		tracer("La page VALIDATION (VAL) est chargée");
@@ -434,48 +439,19 @@ function genererPageCommode(json){
 			name: j.Nom,
 			id: j.id,
 			icon: j.icon,
-			description: j.description || "",
+			description: j.Description || "",
+			created_at: j.Creation || "",
 			updated_at: j.MiseAJour
 		}));
 
 		let html = "";
-
-		html += '<div class="section"><div class="columns">';
-
+		let formateur = new FormateurCommode();
 		tiroirs.forEach(tiroir => {
-			html += `
-          <div class="column">
-            <div class="card has-background-white">
-              <div class="card-content">
-                <div class="media">
-                  <div class="media-lefti">
-                    <figure class="image is-48x48">
-                      <img class="has-background-info is-rounded"
-                        src="${tiroir.icon}"
-                        alt="Placeholder image"
-                      />
-                    </figure>
-                  </div>
-                  <div class="media-content">
-                    <p class="title is-4">${tiroir.name}</p>
-                    <label class="input is-hidden">${tiroir.id}</label>
-                    <div class="button" id="T${tiroir.id}">Ouvrir</div>
-                  </div>
-                </div>
-  
-                <div class="content">
-                   ${tiroir.description}
-                  <br />
-                  Dernière mise à jour: <time datetime="${
-                    tiroir.updated_at
-                  }">${dateTimeFormat.format(new Date(tiroir.updated_at))}</time>
-                </div>
-              </div>
-            </div>
-          </div>`;
+			html += formateur.ajouter(tiroir);
 		});
-		html += "</div></div>";
-                document.querySelector(".container").innerHTML = html;
+		html += formateur.finir();
+
+                document.querySelector(".corpDePage").innerHTML = html;
 		document.querySelector(".title").innerHTML = nomDuSite;
 
 		tiroirs.forEach(tiroir => {
@@ -508,64 +484,29 @@ function genererPageTiroir(leTiroir){
 		laStructure.set(JSON.parse(leTiroir.structure));
 
 		let html = "";
-
-		html += `
-        <div class="section"> <div class="columns">`;
-
 		if (0 == leTiroir.data.length) {
 			html += chapitreEnHTML("Le tiroir est vide.", "");
 		} else {
+			let formateur = null;
+			if (leTiroir.data.length > nbMaxAvantAffichageCompact) {
+				formateur = new FormateurGrandTiroir();
+			} else {
+				formateur = new FormateurPetitTiroir();
+			}
+			html += formateur.commencer(laStructure.get());
 			lesObjets.get().forEach(objet => {
-				html += `
-          <div class="column">
-            <div class="card has-background-white">
-              <div class="card-content">
-                <div class="media">`;
-				if ("" != objet.icon) {
-					html += `
-                  <div class="media-lefti">
-                    <figure class="image is-96x96">
-                      <img class="has-background-info is-rounded"
-                        src="${objet.icon}"
-                        alt="Placeholder image"
-                      />
-                    </figure>
-                  </div>`;
-				}
-				html += `
-                  <div class="media-content">
-                    <p class="title is-4">${objet.name}</p>
-                    <div class="button" id="T${objet.id}">Modifier</div>
-                  </div>
-                </div>
-  
-                <div class="content">`;
-
-				for (const [key, value] of Object.entries(objet.record)) {
-					html += elementEnHTML(key, value); 
-				}
-
-				html += `
-                  Créé le: <time datetime="${
-                    objet.created_at
-                  }">${dateTimeFormat.format(new Date(objet.created_at))}</time>.
-                  Dernière mise à jour: <time datetime="${
-                    objet.updated_at
-                  }">${dateTimeFormat.format(new Date(objet.updated_at))}</time>.
-                </div>
-              </div>
-            </div>
-	  </div>`;
+				html += formateur.ajouter(objet);
 			});
+			html += formateur.finir();
 		}
-		html += `
-        </div></div>`;
-                document.querySelector(".container").innerHTML = html;
+
+                document.querySelector(".corpDePage").innerHTML = html;
 		document.querySelector(".title").innerHTML = nomDuSite+" : "+leTiroir.table;
 
 		lesObjets.get().forEach(objet => {
 			tracer("test modification objet "+objet.id);
-			document.querySelector("#T"+objet.id).onclick = function() {genererPageObjet(objet);};
+			document.querySelector("#M"+objet.id).onclick = function() {genererPageObjet(objet);};
+			document.querySelector("#S"+objet.id).onclick = function() {genererPageSuppressionObjet(objet);};
 		});
 		declarerNouvellePage("TIR");
 
@@ -646,7 +587,7 @@ function genererPageNouveauTiroir(){
 
 	html += "</div></div>";
 
-	document.querySelector(".container").innerHTML = html;
+	document.querySelector(".corpDePage").innerHTML = html;
 	document.querySelector(".title").innerHTML = nomDuSite;
 	document.querySelector("#demanderCreationTiroir").onclick = demanderCreationTiroir;
 
@@ -655,6 +596,16 @@ function genererPageNouveauTiroir(){
 	tracer("La page NOUVEAU TIROIR (CRT) est chargée");
 
 }
+// #################################
+// Génération de la page de suppression d'un élément ("SUO")
+//
+// Demander au server la suppression de l'objet
+function genererPageSuppressionObjet(objet){
+
+	tracer('appel de la fonction genererPageObjet '+objet.id);
+
+}
+
 // #################################
 // Génération de la page de modification d'un élément ("MOO")
 //
@@ -745,7 +696,7 @@ function genererPageObjet(objet){
 
             </div>
           </div>`
-                document.querySelector(".container").innerHTML = html;
+                document.querySelector(".corpDePage").innerHTML = html;
 		document.querySelector(".title").innerHTML = nomDuSite+" : "+nomDeLaTable.get();
 		document.querySelector("#demanderEnregistrement").onclick = demanderEnregistrement;
 
@@ -803,7 +754,7 @@ function genererPageErreur(erreur = "ERREUR INDEFINIE", info = "Aucun informatio
 
           </div>`;
 
-	document.querySelector(".container").innerHTML = html;
+	document.querySelector(".corpDePage").innerHTML = html;
 	declarerNouvellePage("ERR");
 	tracer("La page ERREUR (ERR) est chargée");
 }
@@ -843,7 +794,7 @@ function genererPageFatal(erreur = "ERREUR FATALE INDEFINIE", info = "Aucun info
 
           </div>`;
 
-	document.querySelector(".container").innerHTML = html;
+	document.querySelector(".corpDePage").innerHTML = html;
 	document.querySelector("#revenirConnexion").onclick = genererPageConnexion;
 	declarerNouvellePage("FAT");
 	tracer("La page FATAL (FAT) est chargée");
@@ -894,7 +845,7 @@ function genererInformation() {
 
           </div>`;
 
-	document.querySelector(".container").innerHTML = html;
+	document.querySelector(".corpDePage").innerHTML = html;
 	declarerNouvellePage("INF");
 	tracer("La page ERREUR (INF) est chargée");
 
