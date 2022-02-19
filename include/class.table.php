@@ -424,9 +424,10 @@ class table
     $sql = "SELECT COUNT(*) FROM $this->maTable $this->join $filter $this->limit";
 
     $existe = FALSE;
+    $data = "";
     if ($this->database->query($sql)) {
 
-    	$existe = ($row = mysqli_fetch_row($this->database->result, $this->mode));
+    	$existe = ($data = mysqli_fetch_array($this->database->result, $this->mode));
 	mysqli_free_result($this->database->result);
 
     }
@@ -436,7 +437,7 @@ class table
 		return "<B> erreur interne </B>";
 	}
 
-    return $row[0];
+    return $data['COUNT(*)'];
 	
   }
 

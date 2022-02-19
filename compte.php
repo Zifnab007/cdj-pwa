@@ -11,6 +11,7 @@
 	$utilisateur = isset ($_GET['pseudo']) ? $_GET['pseudo'] : "" ;
 	$eMail = isset ($_GET['email']) ? $_GET['email'] : "" ;
 	$motDePasse = isset ($_GET['mdp']) ? $_GET['mdp'] : "" ;
+	$stockage = isset ($_GET['stockage']) ? $_GET['stockage'] : "" ;
 	$laCle = "";
 	$message = "";
 	//
@@ -30,7 +31,8 @@
 		} else if ($DB_utilisateurs->emailDejaDefini($eMail)) {
 			$message = "L'adresse e-mail ".$eMail." est déjà utilisée.";
 		} else {
-			$message = $DB_utilisateurs->creerUtilisateur($utilisateur, $eMail, $motDePasse);
+			$config['stockage'] = $stockage;
+			$message = $DB_utilisateurs->creerUtilisateur($utilisateur, $eMail, $motDePasse, $config);
 		}
 		if (empty($message)) {
 			$laCle = $DB_utilisateurs->data["Cle"];

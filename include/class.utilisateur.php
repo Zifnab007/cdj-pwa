@@ -23,6 +23,7 @@ class Utilisateurs extends table
 	var $derniereTable;
 	var $id;
 	var $pseudo;
+	var $config;
 
   // **********************
   // ATTRIBUTE DECLARATION
@@ -42,10 +43,11 @@ class Utilisateurs extends table
 	function __construct()
 	{
 		parent::__construct("utilisateur");
-		$this->bases = [];
+		$this->bases = array();
 		$this->derniereTable = 0;
 		$this->id = 0;
 		$this->pseudo = 0;
+		$this->config = array();
 	}
 
 	function pseudoDejaDefini($pseudo)
@@ -91,6 +93,12 @@ class Utilisateurs extends table
 		return $utilisateurValide;
 	}
 
+	function validerConfig($config)
+	{
+		$message = "";
+		return $message;
+	}
+
 	function mettreAJourCle($pseudo)
 	{
 		$laCle = "";
@@ -103,7 +111,23 @@ class Utilisateurs extends table
 		return $laCle;
 	}
 
-	function creerUtilisateur($pseudo, $email, $motDePasse)
+	function mettreAJourConfig($pseudo, $config)
+	{
+		$message = "";
+		if ( $this->selectByReference("Nom",$pseudo) ) {
+			$message = $this->validerConfig($config);
+			if ("" == $message) {
+				$lUtilisateur = array();
+				$lUtilisateur['Config'] = json_encode($Config);
+				$this->update("Nom",$pseudo,$lUtilisateur);
+			}
+		} else {
+			$message = "Le pseudo n'existe pas.";
+		}
+		return $message;
+	}
+
+	function creerUtilisateur($pseudo, $email, $motDePasse, $config)
 	{
 		$message = "";
 		if ($this->pseudoDejaDefini($pseudo)) {
@@ -111,19 +135,23 @@ class Utilisateurs extends table
 		} else if ($this->emailDejaDefini($email)) {
 			$message = "L'adresse mail ".$cwemailutilisateur." existe déjà";
 		} else {
-			$lUtilisateur = array();
-			$lUtilisateur['Nom'] = $pseudo;
-			$lUtilisateur['Email'] = $email;
-			// Encoder le mot de passe
-			$lUtilisateur['Pass'] = password_hash($motDePasse, PASSWORD_DEFAULT);
-			$lUtilisateur['Cle'] = md5(uniqid(rand(), true));
-			$lUtilisateur['Actif'] = FALSE;
-			if ($this->insert($lUtilisateur)) {
-				if (!$this->selectByReference("Nom", $pseudo)) {
-					$message = "Erreur interne à la lecture de la database.";
-				};
-			} else {
-				$message = "Erreur interne d'insertion dans la database.";
+			$message = $this->validerConfig($config);
+			if ("" == $message) {
+				$lUtilisateur = array();
+				$lUtilisateur['Nom'] = $pseudo;
+				$lUtilisateur['Email'] = $email;
+				// Encoder le mot de passe
+				$lUtilisateur['Pass'] = password_hash($motDePasse, PASSWORD_DEFAULT);
+				$lUtilisateur['Cle'] = md5(uniqid(rand(), true));
+				$lUtilisateur['Actif'] = FALSE;
+				$lUtilisateur['Config'] = json_encode($config);
+				if ($this->insert($lUtilisateur)) {
+					if (!$this->selectByReference("Nom", $pseudo)) {
+						$message = "Erreur interne à la lecture de la database.";
+					};
+				} else {
+					$message = "Erreur interne d'insertion dans la database.";
+				}
 			}
 		}
 		return $message;
@@ -135,6 +163,7 @@ class Utilisateurs extends table
 		if ($this->selectByReference("Nom", $pseudo)) {
 			$this->id = $this->data["id"];
 			$this->pseudo = $pseudo;
+			$this->config = json_decode($this->data["Config"]);
 			$lesbases = new table("base");
 			if ($lesbases->selectByReference("Ecrivain", $this->data["id"])) {
 				$this->bases[] = $lesbases->data;

@@ -115,9 +115,10 @@ function declarerNouvellePage(page) {
 function memoriserDonneePage() {
 	if ("CMP" == pageCourante()) {
 		let donnee = new Object();
-		donnee["pseudo"] = document.getElementById("pseudo").value;
-		donnee["email"] = document.getElementById("eMail").value;
-		donnee["mdp"] = document.getElementById("motDePasse").value;
+		donnee["pseudo"] = document.getElementById("pseudoCMP").value;
+		donnee["email"] = document.getElementById("eMailCMP").value;
+		donnee["mdp"] = document.getElementById("motDePasseCMP").value;
+		donnee["stockage"] = document.getElementById("stockageCMP").value;
 		lesPages.nouvellePage("CMP", donnee);
 	} else if ("CRT" == pageCourante()) {
 		let donnee = new Object();
@@ -420,9 +421,10 @@ function genererPageConnexion(){
 function demanderCreationCompte() {
 	memoriserDonneePage();
 	const url = new Adresse(window.location.href,'compte'+extention);
-	url.add("pseudo", document.getElementById("pseudo").value);
-	url.add("email", document.getElementById("eMail").value);
-	url.add("mdp", document.getElementById("motDePasse").value);
+	url.add("pseudo", document.getElementById("pseudoCMP").value);
+	url.add("email", document.getElementById("eMailCMP").value);
+	url.add("mdp", document.getElementById("motDePasseCMP").value);
+	url.add("stockage", document.getElementById("stockageCMP").value);
 	tracer('Clic sur demanderCreationCompte ' + url.get());
 	fetch(url.get())
 		.then(
@@ -439,6 +441,8 @@ function genererPageCompte(){
 	tracer('appel de la fonction genererPageCompte');
 	let pseudo = lesPages.lireElement("CMP", "pseudo");
 	let email = lesPages.lireElement("CMP", "email");
+	let stockage = lesPages.lireElement("CMP", "stockage");
+	if ("" == stockage) { stockage = "Stocker"; };
 	let mdp = "";
 
 	let html = `
@@ -447,9 +451,10 @@ function genererPageCompte(){
             <div class="box">`;
 
 	html += chapitreEnHTML("Créer un compte avec:", "");
-	html += saisieEnHTML("Pseudo", "pseudo", "pseudo", "Votre pseudo", pseudo, "", "");
-	html += saisieEnHTML("Adresse e-mail", "eMail", "email", "Votre adresse e-mail", email, "", "");
-	html += saisieEnHTML("Mot de passe", "motDePasse", "password", "Votre mot de passe", "", "", "");
+	html += saisieEnHTML("Pseudo", "pseudoCMP", "pseudo", "Votre pseudo", pseudo, "", "");
+	html += saisieEnHTML("Adresse e-mail", "eMailCMP", "email", "Votre adresse e-mail", email, "", "");
+	html += saisieEnHTML("Mot de passe", "motDePasseCMP", "password", "Votre mot de passe", "", "", "");
+	html += choixEnHTML("Stocker localement les données", 'stockageCMP', ["Stocker", "Ne pas stocker"], stockage, "");
 
 	html += `
               <div class="field is-grouped">
@@ -463,12 +468,12 @@ function genererPageCompte(){
 	document.querySelector(".corpDePage").innerHTML = html;
 	document.querySelector(".title").innerHTML = nomDuSite;
 	document.getElementById("demanderCreationCompte").onclick = demanderCreationCompte;
-	validerEntree(document.getElementById("pseudo"), "pseudoOK", "pseudoKO", "pseudo");
-	document.getElementById("pseudo").addEventListener('input', function (){validerEntree(this, "pseudoOK", "pseudoKO", "pseudo")});
-	validerEntree(document.getElementById("eMail"), "eMailOK", "eMailKO", "email");
-	document.getElementById("eMail").addEventListener('input', function (){validerEntree(this, "eMailOK", "eMailKO", "email")});
-	validerEntree(document.getElementById("motDePasse"), "motDePasseOK", "motDePasseKO", "password");
-	document.getElementById("motDePasse").addEventListener('input', function (){validerEntree(this, "motDePasseOK", "motDePasseKO", "password")});
+	validerEntree(document.getElementById("pseudoCMP"), "pseudoCMPOK", "pseudoCMPKO", "pseudo");
+	document.getElementById("pseudoCMP").addEventListener('input', function (){validerEntree(this, "pseudoCMPOK", "pseudoCMPKO", "pseudo")});
+	validerEntree(document.getElementById("eMailCMP"), "eMailCMPOK", "eMailCMPKO", "email");
+	document.getElementById("eMailCMP").addEventListener('input', function (){validerEntree(this, "eMailCMPOK", "eMailCMPKO", "email")});
+	validerEntree(document.getElementById("motDePasseCMP"), "motDePasseCMPOK", "motDePasseCMPKO", "password");
+	document.getElementById("motDePasseCMP").addEventListener('input', function (){validerEntree(this, "motDePasseCMPOK", "motDePasseCMPKO", "password")});
 	declarerNouvellePage("CMP");
 	tracer("La page COMPTE (CMP) est chargée");
 
@@ -541,21 +546,28 @@ function requeteGenererPageCommode(json){
 			created_at: j.Creation || "",
 			updated_at: j.MiseAJour
 		}));
-
+		tracer("Afficher une commode avec "+tiroirs.length+" tiroirs");
 		let html = "";
-		let formateur = new FormateurCommode();
-		tiroirs.forEach(tiroir => {
-			html += formateur.ajouter(tiroir);
-		});
-		html += formateur.finir();
+
+		if (0 == tiroirs.length) {
+			html += chapitreEnHTML("La commode est vide.", "");
+		} else {
+			let formateur = new FormateurCommode();
+			tiroirs.forEach(tiroir => {
+				html += formateur.ajouter(tiroir);
+			});
+			html += formateur.finir();
+		}
 
                 document.querySelector(".corpDePage").innerHTML = html;
 		document.querySelector(".title").innerHTML = nomDuSite;
 
-		tiroirs.forEach(tiroir => {
-			tracer("test creation onclick "+tiroir.id);
-			document.getElementById("T"+tiroir.id).onclick = function() {demanderOuvrirTiroir(tiroir.id);};
-		});
+		if (0 != tiroirs.length) {
+			tiroirs.forEach(tiroir => {
+				tracer("test creation onclick "+tiroir.id);
+				document.getElementById("T"+tiroir.id).onclick = function() {demanderOuvrirTiroir(tiroir.id);};
+			});
+		}
 		declarerNouvellePage("COM");
 
 		tracer("La page COMMODE (COM) est chargée");
