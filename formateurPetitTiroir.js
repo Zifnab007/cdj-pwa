@@ -22,7 +22,7 @@ export class FormateurPetitTiroir {
 		let html = `
       <div class="message is-info">
         <div class="message-header">
-          <p>${element.name}</p>
+          <p>${element.nom}</p>
           <label class="input is-hidden">${element.id}</label>
 	  <div class="field is-grouped">
             <p class="control">

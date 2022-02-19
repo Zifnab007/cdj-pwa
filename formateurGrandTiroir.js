@@ -79,7 +79,7 @@ export class FormateurGrandTiroir {
             <td>
               <p class="control"> <buttom class="button is-warning" id="M${element.id}">Mod.</buttom> </p>
             </td>
-            <td>${element.name}</td>`;
+            <td>${element.nom}</td>`;
 		for (const [key, value] of Object.entries(element.record)) {
 			html += `
             <td>${value}</td>`;

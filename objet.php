@@ -7,6 +7,7 @@
 	include_once($PATH_INCLUDE."class.table.php");
 	include_once($PATH_INCLUDE."singleton.database.php");
 	include_once($PATH_INCLUDE."configuration.php");
+	include_once($PATH_INCLUDE."verificateur.php");
 
 	$utilisateur = isset ($_GET['pseudo']) ? $_GET['pseudo'] : "" ;
 	$cle = isset ($_GET['cle']) ? $_GET['cle'] : "" ;
@@ -18,28 +19,33 @@
 	$structure = "";
 	$laStructure = "";
 	$lesObjets = [];
+       	$message = pseudoEstValide($utilisateur);
 
 	// Vérifier l'utilisateur
-	$DB_utilisateurs = new Utilisateurs();
+	if (empty($message)) {
+		$DB_utilisateurs = new Utilisateurs();
 
-	if (empty($tiroir)) {
-		$message = "Le tiroir n'est pas valide.";
-	} else if (empty($objetCree)) {
-		$message = "La commande n'est pas valide.";
-	} else if (empty($utilisateur)) {
-		$message = "Le pseudo est vide.";
-	} else if (empty($cle)) {
-		$message = "La clé est vide.";
-	} else if (!$DB_utilisateurs->pseudoDejaDefini($utilisateur)) {
-		$message = "Le compte n'existe pas ou n'est pas actif.";
-	} else if (!$DB_utilisateurs->estActif($utilisateur)) {
-		$message = "Le compte n'existe pas ou n'est pas actif.";
-	} else if (!$DB_utilisateurs->estConnecte($utilisateur, $cle)) {
-		$message = "Les informations de validations sont incorectes. Il faut vous reconnecter.";
+		if (empty($tiroir)) {
+			$message = "Le tiroir n'est pas valide.";
+		} else if (empty($objetCree)) {
+			$message = "La commande n'est pas valide.";
+		} else if (empty($utilisateur)) {
+			$message = "Le pseudo est vide.";
+		} else if (empty($cle)) {
+			$message = "La clé est vide.";
+		} else if (!$DB_utilisateurs->pseudoDejaDefini($utilisateur)) {
+			$message = "Le compte n'existe pas ou n'est pas actif.";
+		} else if (!$DB_utilisateurs->estActif($utilisateur)) {
+			$message = "Le compte n'existe pas ou n'est pas actif.";
+		} else if (!$DB_utilisateurs->estConnecte($utilisateur, $cle)) {
+			$message = "Les informations de validations sont incorectes. Il faut vous reconnecter.";
+		} else {
+			$laCle = $cle;
+		}
 	}
+
 	if (empty($message)) {
 		$DB_utilisateurs->lireUtilisateur($utilisateur);
-		$laCle = $DB_utilisateurs->data["Cle"];
 		$listeDesTables = $DB_utilisateurs->bases;
 		// Vérifier que la base existe pour cet utilisateur
 		$message = "Le tiroir ".$tiroir." n'existe pas.";
@@ -59,7 +65,7 @@
 			$objetDansTable = [];
 			$lObjet = json_decode($objetCree, true);
 			$idObjet = $lObjet["id"];
-			$objetDansTable["Nom"] = $lObjet["name"];
+			$objetDansTable["Nom"] = $lObjet["nom"];
 			$objetDansTable["Creation"] = date('Y-m-d H:i:s');
 			$objetDansTable["MiseAJour"] = date('Y-m-d H:i:s');
 			$objetDansTable["Photo"] = $lObjet["icon"];
@@ -67,16 +73,21 @@
 			$i = 0;
 			foreach ($laStructure as $champ){
 				$objetDansTable["ch".$i] = $lObjet[$champ->nom];
+				$message = $message.champEstValide($objetDansTable["ch".$i], $champ->type, $champ->nom);
 				$i++;
 			}
-			$message = $lesTiroirs->nouvelObjet($DB_utilisateurs->id, $tiroir, $idObjet, $objetDansTable);
+			if (empty($message)) {
+				$message = $lesTiroirs->nouvelObjet($DB_utilisateurs->id, $tiroir, $idObjet, $objetDansTable);
+			}
 		}
 		if (empty($message)) {
-		// Lire le tiroir
-		$message = $lesTiroirs->lireTiroir($DB_utilisateurs->id, $tiroir);
+			// Lire le tiroir
+			$message = $lesTiroirs->lireTiroir($DB_utilisateurs->id, $tiroir);
+		}
+		if (empty($message)) {
 			foreach ($lesTiroirs->objets as $objet){
 				$unObjet["id"] = $objet["id"];
-				$unObjet["name"] = $objet["Nom"];
+				$unObjet["nom"] = $objet["Nom"];
 				$unObjet["created_at"] = $objet["Creation"];
 				$unObjet["updated_at"] = $objet["MiseAJour"];
 				$unObjet["icon"] = $objet["Photo"];

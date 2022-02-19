@@ -6,27 +6,31 @@
 	include_once($PATH_INCLUDE."class.utilisateur.php");
 	include_once($PATH_INCLUDE."singleton.database.php");
 	include_once($PATH_INCLUDE."configuration.php");
+	include_once($PATH_INCLUDE."verificateur.php");
 
 	$utilisateur = isset ($_GET['pseudo']) ? $_GET['pseudo'] : "" ;
 	$cle = isset ($_GET['cle']) ? $_GET['cle'] : "" ;
 	$laCle = "";
-	$message = "";
+	$message = pseudoEstValide($utilisateur);
 	$listeDesTables = [];
 
 	// Vérifier l'utilisateur
 	$DB_utilisateurs = new Utilisateurs();
+	if (empty($message)) {
 
-	if (empty($utilisateur)) {
-		$message = "Le pseudo est vide.";
-	} else if (empty($cle)) {
-		$message = "La clé est vide.";
-	} else if (!$DB_utilisateurs->pseudoDejaDefini($utilisateur)) {
-		$message = "Le compte n'existe pas ou n'est pas actif.";
-	} else if (!$DB_utilisateurs->estActif($utilisateur)) {
-		$message = "Le compte n'existe pas ou n'est pas actif.";
-	} else if (!$DB_utilisateurs->estConnecte($utilisateur, $cle)) {
-		$message = "Les informations de validations sont incorectes. Il faut vous reconnecter.";
+		if (empty($utilisateur)) {
+			$message = "Le pseudo est vide.";
+		} else if (empty($cle)) {
+			$message = "La clé est vide.";
+		} else if (!$DB_utilisateurs->pseudoDejaDefini($utilisateur)) {
+			$message = "Le compte n'existe pas ou n'est pas actif.";
+		} else if (!$DB_utilisateurs->estActif($utilisateur)) {
+			$message = "Le compte n'existe pas ou n'est pas actif.";
+		} else if (!$DB_utilisateurs->estConnecte($utilisateur, $cle)) {
+			$message = "Les informations de validations sont incorectes. Il faut vous reconnecter.";
+		}
 	}
+
 	if (empty($message)) {
 		$DB_utilisateurs->lireUtilisateur($utilisateur);
 		$laCle = $DB_utilisateurs->data["Cle"];

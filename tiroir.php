@@ -30,10 +30,11 @@
 		$message = "Le compte n'existe pas ou n'est pas actif.";
 	} else if (!$DB_utilisateurs->estConnecte($utilisateur, $cle)) {
 		$message = "Les informations de validations sont incorectes. Il faut vous reconnecter.";
+	} else {
+		$laCle = $cle;
 	}
 	if (empty($message)) {
 		$DB_utilisateurs->lireUtilisateur($utilisateur);
-		$laCle = $DB_utilisateurs->data["Cle"];
 		$listeDesTables = $DB_utilisateurs->bases;
 		// Vérifier que la base n'existe pas pour cet utilisateur
 		$message = "Le tiroir ".$tiroir." n'existe pas.";
@@ -53,7 +54,7 @@
 			$laStructure = json_decode($structure);
 			foreach ($lesTiroirs->objets as $objet){
 				$unObjet["id"] = $objet["id"];
-				$unObjet["name"] = $objet["Nom"];
+				$unObjet["nom"] = $objet["Nom"];
 				$unObjet["created_at"] = $objet["Creation"];
 				$unObjet["updated_at"] = $objet["MiseAJour"];
 				$unObjet["icon"] = $objet["Photo"];

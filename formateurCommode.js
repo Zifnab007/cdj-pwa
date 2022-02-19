@@ -24,7 +24,7 @@ export class FormateurCommode {
     <div class="tile is-child block avecMarge">
       <div class="message is-info">
         <div class="message-header">
-          <p>${element.name}</p>
+          <p>${element.nom}</p>
           <label class="input is-hidden">${element.id}</label>
 	  <div class="button is-link" id="T${element.id}">Ouvrir</div>
         </div>

@@ -1,18 +1,18 @@
 // Classe "Adresse" pour construire les requêttes
 export class Adresse {
 	constructor (base, page) {
-		this.name = base+"/"+page;
+		this.url = base+"/"+page;
 	}
 	get() {
-		return this.name;
+		return this.url;
 	}
 	add(cle, valeur) {
 		let urlLocale = ""
-		if (-1 == this.name.indexOf("?")) {
-			urlLocale = this.name+"?";
+		if (-1 == this.url.indexOf("?")) {
+			urlLocale = this.url+"?";
 		} else {
-			urlLocale = this.name+"&";
+			urlLocale = this.url+"&";
 		}
-		this.name=urlLocale+cle+"="+valeur;
+		this.url=urlLocale+cle+"="+valeur;
 	}
 }

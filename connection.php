@@ -12,20 +12,27 @@
 	$laCle = "";
 	$message = "";
 
-	// Vérifier que l'utilisateur n'existe pas
-	$DB_utilisateurs = new Utilisateurs();
+	// Vérifier la syntaxe des variables
+	$message = $message.pseudoEstValide($utilisateur);
+	$message = $message.mdpEstValide($motDePasse);
 
-	if (empty($utilisateur)) {
-		$message = "Le pseudo est vide.";
-	} else if (empty($motDePasse)) {
-		$message = "Le mot de passe est vide.";
-	} else if (!$DB_utilisateurs->pseudoDejaDefini($utilisateur)) {
-		$message = "Le compte n'existe pas.";
-	} else if (!$DB_utilisateurs->estValide($utilisateur, $motDePasse)) {
-		$message = "Le compte n'existe pas.";
-	} else if (!$DB_utilisateurs->estActif($utilisateur)) {
-		$message = "Le compte n'est pas actif.";
+	// Vérifier que l'utilisateur n'existe pas
+	if (empty($message)) {
+		$DB_utilisateurs = new Utilisateurs();
+
+		if (empty($utilisateur)) {
+			$message = "Le pseudo est vide.";
+		} else if (empty($motDePasse)) {
+			$message = "Le mot de passe est vide.";
+		} else if (!$DB_utilisateurs->pseudoDejaDefini($utilisateur)) {
+			$message = "Le compte n'existe pas.";
+		} else if (!$DB_utilisateurs->estValide($utilisateur, $motDePasse)) {
+			$message = "Le compte n'existe pas.";
+		} else if (!$DB_utilisateurs->estActif($utilisateur)) {
+			$message = "Le compte n'est pas actif.";
+		}
 	}
+
 	if (empty($message)) {
 		$laCle = $DB_utilisateurs->mettreAJourCle($utilisateur);
 		$DB_utilisateurs->lireUtilisateur($utilisateur);

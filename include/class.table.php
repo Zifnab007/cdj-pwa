@@ -50,6 +50,7 @@ class table
   // **********************
 
   var $data;
+  var $mode;
 
   var $database; // Instance of class database
   var $maTable;
@@ -75,6 +76,7 @@ class table
     $this->maTable = $nomDeLaTable;
     $this->order = "";
     $this->join = "";
+    $this->mode = MYSQLI_ASSOC;
 
   }
 
@@ -92,7 +94,7 @@ class table
 	  if ($this->database->query($sql))  {
 
 		  $Result = $this->database->result;
-		  $Exist = ($data = mysqli_fetch_array($Result));
+		  $Exist = ($data = mysqli_fetch_array($Result, $this->mode));
 		  mysqli_free_result($Result);
 
 	  }
@@ -105,13 +107,13 @@ class table
 
 
 	  $IsPresent = FALSE;
-	  $sql =  "SELECT * FROM $this->maTable WHERE $fieldName = '$reference';";
+	  $sql =  "SELECT * FROM $this->maTable WHERE ".mysqli_real_escape_string($this->database->link, $fieldName)." = '".mysqli_real_escape_string($this->database->link, $reference)."';";
 
 	  if ($this->database->query($sql))  {
 
 		  $Result = $this->database->result;
 		  $IsPresent = FALSE;
-		  $IsPresent = ($data = mysqli_fetch_array($Result));
+		  $IsPresent = ($data = mysqli_fetch_array($Result, $this->mode));
 		  mysqli_free_result($Result);
 
 	  }
@@ -125,7 +127,7 @@ class table
 
     if (("" == $fieldName) || ("" == $value)) { return ""; };
 
-    return "".$fieldName.""." LIKE "."\"%".$value."%\"";
+    return "".mysqli_real_escape_string($this->database->link, $fieldName).""." LIKE "."\"%".mysqli_real_escape_string($this->database->link, $value)."%\"";
 
   }
 
@@ -134,7 +136,7 @@ class table
 
     if (("" == $fieldName) || ("" == $value)) { return ""; };
 
-    return "(".$fieldName.""." = "."'".$value."')";
+    return "(".mysqli_real_escape_string($this->database->link, $fieldName)." = '".mysqli_real_escape_string($this->database->link, $value)."')";
 
   }
 
@@ -143,7 +145,7 @@ class table
 
     if (("" == $fieldName) || ("" == $value)) { return ""; };
 
-    return "(".$fieldName.""." != "."'".$value."')";
+    return "(".mysqli_real_escape_string($this->database->link, $fieldName)." != '".mysqli_real_escape_string($this->database->link, $value)."')";
 
   }
 
@@ -152,7 +154,7 @@ class table
 
     if (("" == $fieldName) || ("" == $value)) { return ""; };
 
-    return "".$fieldName.""." >= "."\"".$value."\"";
+    return "".mysqli_real_escape_string($this->database->link, $fieldName).""." >= "."\"".mysqli_real_escape_string($this->database->link, $value)."\"";
 
   }
 
@@ -161,7 +163,7 @@ class table
 
     if (("" == $fieldName) || ("" == $value)) { return ""; };
 
-    return "".$fieldName.""." <= "."\"".$value."\"";
+    return "".mysqli_real_escape_string($this->database->link, $fieldName).""." <= "."\"".mysqli_real_escape_string($this->database->link, $value)."\"";
 
   }
 
@@ -170,7 +172,7 @@ class table
 
     if ("" == $fieldName) { return ""; };
 
-    return "".$fieldName." IS NULL";
+    return "".mysqli_real_escape_string($this->database->link, $fieldName)." IS NULL";
 
   }
 
@@ -179,7 +181,7 @@ class table
 
     if ("" == $fieldName) { return ""; };
 
-    return "".$fieldName." IS NOT NULL";
+    return "".mysqli_real_escape_string($this->database->link, $fieldName)." IS NOT NULL";
 
   }
 
@@ -259,7 +261,7 @@ class table
     $Existe = FALSE;
 
     if ($this->database->query($sql)) {
-    	$Exist = ($this->data = mysqli_fetch_array($this->database->result));
+    	$Exist = ($this->data = mysqli_fetch_array($this->database->result, $this->mode));
 
 	if (! $Exist)
 	{
@@ -279,7 +281,7 @@ class table
     $sql =  "SELECT * FROM $this->maTable $this->join WHERE $LocalFilter $this->order $this->limit;";
     $Exist = FALSE;
     if ($this->database->query($sql)) {
-	    $Exist = ($this->data = mysqli_fetch_array($this->database->result));
+	    $Exist = ($this->data = mysqli_fetch_array($this->database->result, $this->mode));
     }
 
     if (! $Exist) { mysqli_free_result($this->database->result); }
@@ -305,7 +307,7 @@ class table
   {
 
     $Exist = FALSE;
-    if ($this->data = mysqli_fetch_array($this->database->result)) {
+    if ($this->data = mysqli_fetch_array($this->database->result, $this->mode)) {
 	    $Exist = TRUE;
     } else {
 	    mysqli_free_result($this->database->result);
@@ -321,7 +323,7 @@ class table
   function deleteByReference($fieldName, $value)
   {
 
-    $sql = "DELETE FROM $this->maTable WHERE $fieldName = $value;";
+    $sql = "DELETE FROM $this->maTable WHERE ".mysqli_real_escape_string($this->database->link, $fieldName)." = ".mysqli_real_escape_string($this->database->link, $value).";";
     $result = $this->database->query($sql);
 
   }
@@ -338,11 +340,11 @@ class table
       {
         if ($DataFieldStr == "")
         {
-          $DataFieldStr = $cle;
-          $DataValueStr = "'".$valeur."'";
+          $DataFieldStr = mysqli_real_escape_string($this->database->link, $cle);
+          $DataValueStr = "'".mysqli_real_escape_string($this->database->link, $valeur)."'";
         } else {
-          $DataFieldStr = $DataFieldStr." , ".$cle;
-          $DataValueStr = $DataValueStr." , '".$valeur."'";
+          $DataFieldStr = $DataFieldStr." , ".mysqli_real_escape_string($this->database->link, $cle);
+          $DataValueStr = $DataValueStr." , '".mysqli_real_escape_string($this->database->link, $valeur)."'";
         }
       }
       $sql = "INSERT INTO $this->maTable ( $DataFieldStr ) VALUES ( $DataValueStr )";
@@ -362,9 +364,9 @@ class table
     {
       if ($DataUpdStr == "")
       {
-        $DataUpdStr = $cle." = '".$valeur."'";
+        $DataUpdStr = mysqli_real_escape_string($this->database->link, $cle)." = '".mysqli_real_escape_string($this->database->link, $valeur)."'";
       } else {
-        $DataUpdStr = $DataUpdStr." , ".$cle." = '".$valeur."'";
+        $DataUpdStr = $DataUpdStr." , ".mysqli_real_escape_string($this->database->link, $cle)." = '".mysqli_real_escape_string($this->database->link, $valeur)."'";
       }
     } 
     $LocalFilter = $this->filterEqual($refName, $refValue);
@@ -424,7 +426,7 @@ class table
     $existe = FALSE;
     if ($this->database->query($sql)) {
 
-    	$existe = ($row = mysqli_fetch_row($this->database->result));
+    	$existe = ($row = mysqli_fetch_row($this->database->result, $this->mode));
 	mysqli_free_result($this->database->result);
 
     }

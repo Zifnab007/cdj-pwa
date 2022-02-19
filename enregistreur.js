@@ -29,4 +29,7 @@ export class Enregistreur {
 		if (this.stockageLocal) { localStorage.setItem(this.selecteur, ""); }
 		tracer('enregistreur '+this.selecteur+' reset ');
 	}
+	estVide () {
+		return (null == this.donnee);
+	}
 }

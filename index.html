@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>La commode de Julie</title>
     <link rel="manifest" href="manifest.webmanifest.json" />
-    <link rel="icon" type="image/png" href="/images/icons/icon-32x32.png" />
+    <link rel="icon" type="image/png" href="/cdj/images/icons/icon-32x32.png" />
     <script
       async
       src="https://cdn.jsdelivr.net/npm/pwacompat@2.0.9/pwacompat.min.js"
@@ -18,14 +18,9 @@
 
     <script>
       if ("serviceWorker" in navigator) {
-        navigator.serviceWorker
-          .register("/sw.js")
-          .then((reg) => {
-            console.log("Le service worker a été enregistré!");
-          })
-          .catch((error) => {
-            console.error(error);
-          });
+        navigator.serviceWorker.register('/cdj/sw.js')
+          .then((reg) => { console.log("Le service worker a été enregistré!"); })
+          .catch((error) => { console.error('Register error : '+error); });
       } else {
         console.warn("Le service workers n'est pas supporté par ce navigateur.");
       }

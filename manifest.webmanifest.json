@@ -5,8 +5,8 @@
     "background_color": "#BBBBBB",
     "display": "standalone",
     "orientation": "portrait",
-    "Scope": "/",
-    "start_url": "/",
+    "Scope": "/cdj",
+    "start_url": "/cdj",
     "categorie": ["database"],
     "icons": [
       {
