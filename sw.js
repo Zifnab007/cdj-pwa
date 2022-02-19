@@ -1,7 +1,7 @@
-export const SWDebug = false;
+const WSDebug = false;
 
 self.addEventListener("fetch", (event) => {
-	if (SWDebug) {console.log("DEBUG " + event.request.url);}
+	if (WSDebug) {console.log("DEBUG " + event.request.url);}
 });
 
 self.addEventListener("install", (event) => {
