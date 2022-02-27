@@ -1,7 +1,9 @@
+import { dateHeureFormatage, elementFormatage } from "./outils.js";
+
 // Classe "FormateurPetitTiroir" pour formater l'affichage d'un petit tiroir
 export class FormateurPetitTiroir {
 	constructor () {
-		this.dateTimeFormat = Intl.DateTimeFormat("fr");
+		this.structure = "";
 	}
 
 	elementEnHTML(key, value){
@@ -13,7 +15,8 @@ export class FormateurPetitTiroir {
 		 return elementStr;
 	}
 
-	commencer(structure) {
+	commencer($structure) {
+		this.structure = $structure;
 		return `
 `;
 		}
@@ -35,18 +38,21 @@ export class FormateurPetitTiroir {
         </div>
         <div class="message-body">
 `;
+		let index = 0;
 		for (const [key, value] of Object.entries(element.record)) {
-			html += this.elementEnHTML(key, value); 
+			let texte = elementFormatage(value, this.structure[index].type);
+			html += this.elementEnHTML(key, texte); 
+			index++;
 		}
 
 		html += `
           <br/>
           <strong>Création</strong> le <time datetime="${
                     element.created_at
-                  }">${this.dateTimeFormat.format(new Date(element.created_at))}</time><br/>
+                  }">${dateHeureFormatage.format(new Date(element.created_at))}</time><br/>
           <strong>Mise à jour</strong> le <time datetime="${
                     element.updated_at
-                  }">${this.dateTimeFormat.format(new Date(element.updated_at))}</time><br/>
+                  }">${dateHeureFormatage.format(new Date(element.updated_at))}</time><br/>
         </div>
       </div>
 `;

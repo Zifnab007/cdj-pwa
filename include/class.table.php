@@ -336,15 +336,21 @@ class table
   {
       $DataValueStr = "";
       $DataFieldStr = "";
+      $champValeur = "";
       foreach ($fieldsValue as $cle => $valeur)
       {
+	if ("" == $valeur) {
+          $champValeur = "NULL";
+	} else {
+          $champValeur = "'".mysqli_real_escape_string($this->database->link, $valeur)."'";
+        }
         if ($DataFieldStr == "")
         {
           $DataFieldStr = mysqli_real_escape_string($this->database->link, $cle);
-          $DataValueStr = "'".mysqli_real_escape_string($this->database->link, $valeur)."'";
+          $DataValueStr = $champValeur;
         } else {
           $DataFieldStr = $DataFieldStr." , ".mysqli_real_escape_string($this->database->link, $cle);
-          $DataValueStr = $DataValueStr." , '".mysqli_real_escape_string($this->database->link, $valeur)."'";
+          $DataValueStr = $DataValueStr." , ".$champValeur;
         }
       }
       $sql = "INSERT INTO $this->maTable ( $DataFieldStr ) VALUES ( $DataValueStr )";
@@ -360,13 +366,19 @@ class table
   {
 
     $DataUpdStr = "";
+      $champValeur = "";
     foreach ($fieldsValue as $cle => $valeur)
     {
+      if ("" == $valeur) {
+        $champValeur = "NULL";
+      } else {
+        $champValeur = "'".mysqli_real_escape_string($this->database->link, $valeur)."'";
+      }
       if ($DataUpdStr == "")
       {
-        $DataUpdStr = mysqli_real_escape_string($this->database->link, $cle)." = '".mysqli_real_escape_string($this->database->link, $valeur)."'";
+        $DataUpdStr = mysqli_real_escape_string($this->database->link, $cle)." = ".$champValeur;
       } else {
-        $DataUpdStr = $DataUpdStr." , ".mysqli_real_escape_string($this->database->link, $cle)." = '".mysqli_real_escape_string($this->database->link, $valeur)."'";
+        $DataUpdStr = $DataUpdStr." , ".mysqli_real_escape_string($this->database->link, $cle)." = ".$champValeur;
       }
     } 
     $LocalFilter = $this->filterEqual($refName, $refValue);
@@ -399,8 +411,10 @@ class table
   {
 	  $sql = " CREATE TABLE `".$this->maTable."` ( `id` INT NOT NULL AUTO_INCREMENT ";
 	  foreach ($fields as $value) {
-		  if ("DATE" == $value["type"]) {
+		  if ("DATETIME" == $value["type"]) {
 			  $type = "datetime DEFAULT NULL";
+		  } else if ("DATE" == $value["type"]) {
+			  $type = "date DEFAULT NULL";
 		  } else if ("ENTIER" == $value["type"]) {
 			  $type = "int(11) DEFAULT NULL";
 		  } else if ("TEXTE" == $value["type"]) {

@@ -1,10 +1,11 @@
 // Classe "FormateurGrandTiroir" pour formater l'affichage d'un petit tiroir
 import { tracer, tracerTable } from "./traceur.js";
+import { dateHeureFormatage, elementFormatage } from "./outils.js";
+
 
 export class FormateurGrandTiroir {
 	constructor () {
-		this.nbElement = 0;
-		this.dateTimeFormat = Intl.DateTimeFormat("fr");
+		this.structure = "";
 	}
 
 	elementEnHTML(key, value){
@@ -17,6 +18,7 @@ export class FormateurGrandTiroir {
 	}
 
 	commencer(structure) {
+		this.structure = structure;
 		tracerTable(structure);
 		let html = `
       <table class="table">
@@ -80,17 +82,18 @@ export class FormateurGrandTiroir {
               <p class="control"> <buttom class="button is-warning" id="M${element.id}">Mod.</buttom> </p>
             </td>
             <td>${element.nom}</td>`;
+		let index = 0;
 		for (const [key, value] of Object.entries(element.record)) {
+			let texte = elementFormatage(value, this.structure[index].type);
 			html += `
-            <td>${value}</td>`;
+            <td>${texte}</td>`;
+			index++;
 		};
 		html += `
-	    <td>${element.updated_at}</td>
-	    <td>${element.created_at}</td>
+	    <td>${dateHeureFormatage.format(new Date(element.created_at))}</td>
+	    <td>${dateHeureFormatage.format(new Date(element.updated_at))}</td>
 	    <td><p class="control"> <button class="button is-danger" id="S${element.id}">Sup.</buttom> </p></td>
           </tr>`;
-
-		this.nbElement++;
 
 		return html;
 	}

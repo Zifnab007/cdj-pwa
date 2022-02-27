@@ -1,8 +1,9 @@
+import { dateHeureFormatage } from "./outils.js";
+
 // Classe "FormateurCommode" pour formater l'affichage de la commode
 export class FormateurCommode {
 	constructor () {
 		this.nbElement = 0;
-		this.dateTimeFormat = Intl.DateTimeFormat("fr");
 	}
 	commencer() {
 		return `
@@ -32,10 +33,10 @@ export class FormateurCommode {
           <strong>Description</strong>: ${element.description}<br/>
           <strong>Création</strong> le <time datetime="${
                     element.created_at
-                  }">${this.dateTimeFormat.format(new Date(element.created_at))}</time><br/>
+                  }">${dateHeureFormatage.format(new Date(element.created_at))}</time><br/>
           <strong>Mise à jour</strong> le <time datetime="${
                     element.updated_at
-                  }">${this.dateTimeFormat.format(new Date(element.updated_at))}</time><br/>
+                  }">${dateHeureFormatage.format(new Date(element.updated_at))}</time><br/>
         </div>
       </div>
     </div>

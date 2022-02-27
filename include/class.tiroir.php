@@ -96,8 +96,8 @@ class Tiroir
                         $this->id = mysqli_insert_id($lesbases->database->link);
                         $nouvelleTable = new table($this->nom($idUtilisateur, $this->id));
                         $champs[] = array( "nom" => "Nom", "type" => "TEXTE");
-                        $champs[] = array( "nom" => "Creation", "type" => "DATE");
-                        $champs[] = array( "nom" => "MiseAJour", "type" => "DATE");
+                        $champs[] = array( "nom" => "Creation", "type" => "DATETIME");
+                        $champs[] = array( "nom" => "MiseAJour", "type" => "DATETIME");
                         $champs[] = array( "nom" => "Photo", "type" => "TEXTE");
                         $champs[] = array( "nom" => "supprimer", "type" => "BOOLEEN");
                         $index = 0;

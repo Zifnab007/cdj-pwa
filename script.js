@@ -19,6 +19,7 @@ import { extention } from "./config.js";
 import { tracer, tracerTable } from "./traceur.js";
 import { Enregistreur } from "./enregistreur.js";
 import { Adresse } from "./adresse.js";
+import { aujourdHui, dateENEnFR, elementFormatage } from "./outils.js";
 import { Pages } from "./pages.js";
 import { FormateurCommode } from "./formateurCommode.js";
 import { FormateurPetitTiroir } from "./formateurPetitTiroir.js";
@@ -135,9 +136,9 @@ function memoriserDonneePage() {
 		donnee["icon"] = "";
 		donnee["supprimer"] = 0;
 		let champsLibres = new Object();
-		laStructure.get().forEach(function (structure, index) {
-			champsLibres[structure.nom] = document.getElementById("elem"+index).value;
-			tracer('MOO ' + structure.nom + " : " + document.getElementById("elem"+index).value + " id : " + "elem"+index);
+		laStructure.get().forEach(function (unChamp, index) {
+			champsLibres[unChamp.nom] = document.getElementById("elem"+index).value;
+			tracer('MOO ' + unChamp.nom + " : " + document.getElementById("elem"+index).value + " id : " + "elem"+index);
 		});
 		tracerTable(champsLibres);
 		tracerTable(donnee);
@@ -180,6 +181,22 @@ function messageEstValide(json) {
 		console.error('Invalider '+json.pseudo+' message :'+json.erreur);
 		return false;
 	}
+}
+
+function mettreAJourTiroir(objets, structure) {
+	for (var i = 0; i < objets.length; i++) {
+		structure.forEach(function (unChamp, index) {
+			if ("DATE" == unChamp.type) {
+				let valeur = objets[i].record[unChamp.nom];
+				if (null == valeur) {
+					objets[i].record[unChamp.nom] = "";
+				} else {
+					objets[i].record[unChamp.nom] = dateENEnFR(valeur);
+				}
+			}
+		});
+	}
+	return objets;
 }
 
 function chapitreEnHTML(titre, texte) {
@@ -247,7 +264,25 @@ function validerEntree(element, idAideOK, idAideKO, type) {
 			document.getElementById(idAideOK).className = "help is-success is-hidden";
 		}
 	}
+	if ("DATE" == type) {
+		let reg = /^([012][0-9]|30|31)\/(0[1-9]|10|11|12)\/[1-9][0-9]{3}$/;
+		let valeur = element.value;
+		if ("" == valeur) {
+			document.getElementById(idAideKO).className = "help is-danger is-hidden";
+			document.getElementById(idAideOK).className = "help is-success is-hidden";
+		} else if (reg.test(valeur)) {
+			document.getElementById(idAideKO).className = "help is-danger is-hidden";
+			document.getElementById(idAideOK).className = "help is-success is-flex";
+		} else {
+			document.getElementById(idAideKO).className = "help is-danger is-flex";
+			document.getElementById(idAideOK).className = "help is-success is-hidden";
+		}
+	}
 };
+
+function mettreAaujourdHui(id) {
+	document.getElementById(id).value = aujourdHui();
+}
 
 function saisieEnHTML(titre, id, type, fond, valeur, aideOK, aideKO) {
 
@@ -266,13 +301,24 @@ function saisieEnHTML(titre, id, type, fond, valeur, aideOK, aideKO) {
 
 	html = `
         <div class="field">
-          <label class="label">${titre}</label>
+          <label class="label">${titre}`;
+	if ("DATE" == type) {
+		let dateAuto = aujourdHui();
+		html += `
+            <a id="${id}Date">(aujourd'hui ${dateAuto})</a>`;
+	}
+	html += `
+	  </label>
           <div class="control">
             <input class="input" type="${typeAffichage}" placeholder="${fond}" id="${id}" value="${valeur}">`;
 
 	if ("ENTIER" == type) {
 		if ("" == aideKO) { aideKO = "Ce nombre est invalide. Il doit comporter uniquement un maximum de 10 chiffres [0-9]."; }
 		if ("" == aideOK) { aideOK = "Ce nombre est valide."; }
+	}
+	if ("DATE" == type) {
+		if ("" == aideKO) { aideKO = "Cette date est invalide. Elle doit être de la forme JJ/MM/AAAA entre 01/01/1000 et 31/12/9999."; }
+		if ("" == aideOK) { aideOK = "Cette date est valide."; }
 	}
 	if ("password" == type) {
 		if ("" == aideKO) { aideKO = "Le mot de passe doit avoir entre 6 et 32 caractères."; }
@@ -590,10 +636,10 @@ function requeteGenererPageTiroir(leTiroir){
 
 	if (messageEstValide(leTiroir)) {
 
-		lesObjets.set(leTiroir.data);
 		leTiroirId.set(leTiroir.id);
 		nomDeLaTable.set(leTiroir.table);
 		laStructure.set(JSON.parse(leTiroir.structure));
+		lesObjets.set(mettreAJourTiroir(leTiroir.data, laStructure.get()));
 
 		let html = "";
 		if (0 == leTiroir.data.length) {
@@ -739,8 +785,8 @@ function demanderEnregistrement() {
 	jsonCmd["nom"] = document.getElementById("elemNom").value;
 	jsonCmd["icon"] = "";
 	jsonCmd["supprimer"] = 0;
-	laStructure.get().forEach(function (structure, index) {
-		jsonCmd[structure.nom] = document.getElementById("elem"+index).value;
+	laStructure.get().forEach(function (unChamp, index) {
+		jsonCmd[unChamp.nom] = document.getElementById("elem"+index).value;
 	});
 	lObjet.set(jsonCmd);
 	tracer(JSON.stringify(jsonCmd));
@@ -773,9 +819,9 @@ function genererPageObjet(objet){
 		html +=  saisieEnHTML("Nom", "elemNom", "TEXTE", "", objet.nom, null, null);
 
 		tracerTable(laStructure);
-		laStructure.get().forEach(function (structure, index) {
-			if (null == objet.record[structure.nom]) {texte = ""} else {texte = objet.record[structure.nom]};
-			html += saisieEnHTML(structure.nom, "elem"+index, structure.type, null, texte, "", "");
+		laStructure.get().forEach(function (unChamp, index) {
+			if (null == objet.record[unChamp.nom]) {texte = ""} else {texte = objet.record[unChamp.nom]};
+			html += saisieEnHTML(unChamp.nom, "elem"+index, unChamp.type, null, elementFormatage(texte, unChamp.type), "", "");
 		});
 
 		html += `
@@ -791,9 +837,12 @@ function genererPageObjet(objet){
 
                 document.querySelector(".corpDePage").innerHTML = html;
 		document.querySelector(".title").innerHTML = nomDuSite+" : "+nomDeLaTable.get();
-		laStructure.get().forEach(function (structure, index) {
-			validerEntree(document.getElementById("elem"+index), "elem"+index+'OK', "elem"+index+'KO', structure.type);
-			document.getElementById("elem"+index).addEventListener('input', function (){validerEntree(this, "elem"+index+'OK', "elem"+index+'KO', structure.type)});
+		laStructure.get().forEach(function (unChamp, index) {
+			validerEntree(document.getElementById("elem"+index), "elem"+index+'OK', "elem"+index+'KO', unChamp.type);
+			document.getElementById("elem"+index).addEventListener('input', function (){validerEntree(this, "elem"+index+'OK', "elem"+index+'KO', unChamp.type)});
+			if ("DATE" == unChamp.type) {
+				document.getElementById("elem"+index+"Date").onclick = function() {mettreAaujourdHui("elem"+index);};
+			}
 		});
 		document.getElementById("demanderEnregistrement").onclick = demanderEnregistrement;
 
@@ -813,8 +862,8 @@ function genererPageNouvelObjet(){
 	objet["nom"] = null;
 	objet["icon"] = null;
 	objet["supprimer"] = 0;
-	laStructure.get().forEach(function (structure, index) {
-		champsLibres[structure.nom] = null;
+	laStructure.get().forEach(function (unChamp, index) {
+		champsLibres[unChamp.nom] = null;
 	});
 	tracerTable(champsLibres);
 	objet["record"] = champsLibres;

@@ -72,8 +72,13 @@
 			$objetDansTable["supprimer"] = $lObjet["supprimer"];
 			$i = 0;
 			foreach ($laStructure as $champ){
-				$objetDansTable["ch".$i] = $lObjet[$champ->nom];
-				$message = $message.champEstValide($objetDansTable["ch".$i], $champ->type, $champ->nom);
+				$messageValidation = champEstValide($lObjet[$champ->nom], $champ->type, $champ->nom);
+				if ("DATE" == $champ->type) {
+					$objetDansTable["ch".$i] = convertirDate($lObjet[$champ->nom]);
+				} else {
+					$objetDansTable["ch".$i] = $lObjet[$champ->nom];
+				}
+				$message = $message.$messageValidation;
 				$i++;
 			}
 			if (empty($message)) {
