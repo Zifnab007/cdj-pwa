@@ -85,6 +85,12 @@ function declarerNouvellePage(page) {
 	if ("CON" == page) {
 		while (laPage.length > 0) {laPage.pop()}
 	}
+	// Mettre à jour le texte les boutons
+	if ("CON" == page) {
+		document.getElementById("quiter").innerHTML = "Recharger";
+	} else {
+		document.getElementById("quiter").innerHTML = "Quiter";
+	}
 	// activer ou désactiver les boutons
 	if (("CON" == page) || ("FAT" == page)) {
 		document.getElementById("retour").className = "button is-link is-hidden";
@@ -172,7 +178,7 @@ function messageEstValide(json) {
 	tracer('validation ' + json.cle+" de "+json.pseudo+" Erreur :"+json.erreur+".");
 	if ((json.cle == laCle.get()) && (json.pseudo == lUtilisateur.get()) && ("" == json.erreur)) {
 		return true;
-	} else if ("" == json.erreur) {
+	} else if (("" == json.cle) || (json.cle != laCle.get()) || (json.pseudo != lUtilisateur.get())) {
 		lUtilisateur.reset();
 		laCle.reset();
 		console.error('Invalider '+json.pseudo);
@@ -1050,6 +1056,7 @@ function generateUI(){
 		tracer("La page n'est pas définie");
 		genererPageFatal("LA PAGE PRECEDANTE EST INVALIDE", "");
 	}
+	document.getElementById("quiter").onclick = genererPageConnexion;
 	document.getElementById("retour").onclick = allerPagePrecedante;
 	document.getElementById("config").onclick = genererInformation;
 	document.getElementById("creerTiroir").onclick = genererPageNouveauTiroir;
