@@ -14,7 +14,7 @@
 	$listeDesTables = [];
 	$laCle = "";
 	$nomTiroir = "";
-	$structure = "";
+	$config = "";
 	$lesObjets = [];
 
 	// Vérifier l'utilisateur
@@ -42,7 +42,7 @@
 			if ($table["id"] == $tiroir) {
 				$message = "";
 				$nomTiroir = $table["Nom"];
-				$structure = $table["Structure"];
+				$config = $table["Configuration"];
 			}
 		}
 	}
@@ -51,7 +51,7 @@
 		$lesTiroirs = new Tiroir();
 		$message = $lesTiroirs->lireTiroir($DB_utilisateurs->id, $tiroir);
 		if (empty($message)) {
-			$laStructure = json_decode($structure);
+			$laConfig = json_decode($config);
 			foreach ($lesTiroirs->objets as $objet){
 				$unObjet["id"] = $objet["id"];
 				$unObjet["nom"] = $objet["Nom"];
@@ -61,7 +61,7 @@
 				$unObjet["supprimer"] = $objet["supprimer"];
 				$unObjet["record"] = [];
 				$i = 0;
-				foreach ($laStructure as $champ){
+				foreach ($laConfig->structure as $champ){
 					$unObjet["record"][$champ->nom] = $objet["ch".$i];
 					$i++;
 				}
@@ -82,7 +82,7 @@
 		"erreur" => $message,
 		"id" => $tiroir,
 		"table" => $nomTiroir,
-		"structure" => $structure,
+		"config" => $config,
 		"data" => $lesObjets);
 	echo json_encode($reponse, JSON_INVALID_UTF8_SUBSTITUTE|JSON_PRESERVE_ZERO_FRACTION|JSON_UNESCAPED_LINE_TERMINATORS|JSON_UNESCAPED_SLASHES|JSON_UNESCAPED_UNICODE);
 

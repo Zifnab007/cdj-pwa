@@ -90,7 +90,8 @@ class Tiroir
                 $laTable['Ecrivain'] = $idUtilisateur;
                 $laTable['Creation'] = date('Y-m-d H:i:s');
                 $laTable['MiseAJour'] = date('Y-m-d H:i:s');
-                $laTable['Structure'] = json_encode($lesChamps, JSON_INVALID_UTF8_SUBSTITUTE|JSON_PRESERVE_ZERO_FRACTION|JSON_UNESCAPED_LINE_TERMINATORS|JSON_UNESCAPED_SLASHES|JSON_UNESCAPED_UNICODE);
+                $structure['structure'] = $lesChamps;
+                $laTable['Configuration'] = json_encode($structure, JSON_INVALID_UTF8_SUBSTITUTE|JSON_PRESERVE_ZERO_FRACTION|JSON_UNESCAPED_LINE_TERMINATORS|JSON_UNESCAPED_SLASHES|JSON_UNESCAPED_UNICODE);
                 if ($lesbases->insert($laTable)) {
                         $champ = [];
                         $this->id = mysqli_insert_id($lesbases->database->link);

@@ -638,7 +638,8 @@ function requeteGenererPageTiroir(leTiroir){
 
 		leTiroirId.set(leTiroir.id);
 		nomDeLaTable.set(leTiroir.table);
-		laStructure.set(JSON.parse(leTiroir.structure));
+		let config = JSON.parse(leTiroir.config);
+		laStructure.set(config['structure']);
 		lesObjets.set(mettreAJourTiroir(leTiroir.data, laStructure.get()));
 
 		let html = "";

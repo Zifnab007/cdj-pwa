@@ -16,7 +16,7 @@
 	$listeDesTables = [];
 	$laCle = "";
 	$nomTiroir = "";
-	$structure = "";
+	$config = "";
 	$laStructure = "";
 	$lesObjets = [];
        	$message = pseudoEstValide($utilisateur);
@@ -53,8 +53,9 @@
 			if ($table["id"] == $tiroir) {
 				$message = "";
 				$nomTiroir = $table["Nom"];
-				$structure = $table["Structure"];
-				$laStructure = json_decode($structure);
+				$config = $table["Configuration"];
+				$configTable = json_decode($config);
+				$laStructure = $configTable->structure;
 			}
 		}
 	}
@@ -66,7 +67,9 @@
 			$lObjet = json_decode($objetCree, true);
 			$idObjet = $lObjet["id"];
 			$objetDansTable["Nom"] = $lObjet["nom"];
-			$objetDansTable["Creation"] = date('Y-m-d H:i:s');
+			if (empty($idObjet)) {
+				$objetDansTable["Creation"] = date('Y-m-d H:i:s');
+			}
 			$objetDansTable["MiseAJour"] = date('Y-m-d H:i:s');
 			$objetDansTable["Photo"] = $lObjet["icon"];
 			$objetDansTable["supprimer"] = $lObjet["supprimer"];
@@ -120,7 +123,7 @@
 		"erreur" => $message,
 		"id" => $tiroir,
 		"table" => $nomTiroir,
-		"structure" => $structure,
+		"config" => $config,
 		"data" => $lesObjets);
 	echo json_encode($reponse, JSON_INVALID_UTF8_SUBSTITUTE|JSON_PRESERVE_ZERO_FRACTION|JSON_UNESCAPED_LINE_TERMINATORS|JSON_UNESCAPED_SLASHES|JSON_UNESCAPED_UNICODE);
 
