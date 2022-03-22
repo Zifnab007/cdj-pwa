@@ -2,8 +2,9 @@ import { dateHeureFormatage, elementFormatage } from "./outils.js";
 
 // Classe "FormateurPetitTiroir" pour formater l'affichage d'un petit tiroir
 export class FormateurPetitTiroir {
-	constructor () {
+	constructor (avecPhoto) {
 		this.structure = "";
+		this.photo = avecPhoto;
 	}
 
 	elementEnHTML(key, value){
@@ -24,7 +25,14 @@ export class FormateurPetitTiroir {
 	ajouter(element) {
 		let html = `
       <div class="message is-info">
-        <div class="message-header">
+        <div class="message-header">`;
+		if (this.photo && ("" != element.icone)) {
+			html += `
+	  <figure class="image is-128x128">
+            <img src="${element.icone}">
+          </figure>`;
+		}
+		html += `
           <p>${element.nom}</p>
           <label class="input is-hidden">${element.id}</label>
 	  <div class="field is-grouped">

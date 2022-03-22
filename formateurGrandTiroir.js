@@ -4,8 +4,9 @@ import { dateHeureFormatage, elementFormatage } from "./outils.js";
 
 
 export class FormateurGrandTiroir {
-	constructor () {
+	constructor (avecPhoto) {
 		this.structure = "";
+		this.photo = ("1" == avecPhoto);
 	}
 
 	elementEnHTML(key, value){
@@ -21,11 +22,19 @@ export class FormateurGrandTiroir {
 		this.structure = structure;
 		tracerTable(structure);
 		let html = `
+    <div class="table-container">
       <table class="table">
         <thead>
           <tr>
             <th>
-            </th>
+            </th>`;
+		if (this.photo) {
+			html += `
+            <th>
+              <abbr title="Icone">Icone</abbr>
+            </th>`;
+		}
+		html += `
             <th>
               <abbr title="Nom">Nom</abbr>
             </th>`;
@@ -49,7 +58,14 @@ export class FormateurGrandTiroir {
         <tfoot>
           <tr>
             <th>
-            </th>
+            </th>`;
+		if (this.photo) {
+			html += `
+            <th>
+              <abbr title="Icone">Icone</abbr>
+            </th>`;
+		}
+		html += `
 	    <th>
               <abbr title="Nom">Nom</abbr>
             </th>`;
@@ -80,7 +96,20 @@ export class FormateurGrandTiroir {
           <tr>
             <td>
               <p class="control"> <buttom class="button is-warning" id="M${element.id}">Mod.</buttom> </p>
-            </td>
+            </td>`;
+		if (this.photo) {
+			html += `
+            <td>`;
+			if ("" != element.icone) {
+				html += `
+	      <figure class="image is-64x64">
+                <img src="${element.icone}">
+              </figure>`;
+			}
+			html += `
+            </td>`;
+		}
+		html += `
             <td>${element.nom}</td>`;
 		let index = 0;
 		for (const [key, value] of Object.entries(element.record)) {
@@ -101,6 +130,7 @@ export class FormateurGrandTiroir {
 	finir() {
 		return `
         </tbody>
-      </table>`;
+      </table>
+    </div>`;
 	}
 }

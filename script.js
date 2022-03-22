@@ -18,7 +18,8 @@
 import { extention } from "./config.js";
 import { tracer, tracerTable } from "./traceur.js";
 import { Enregistreur } from "./enregistreur.js";
-import { Adresse } from "./adresse.js";
+import { RequeteGet } from "./requeteGet.js";
+import { RequetePost } from "./requetePost.js";
 import { aujourdHui, dateENEnFR, elementFormatage } from "./outils.js";
 import { Pages } from "./pages.js";
 import { FormateurCommode } from "./formateurCommode.js";
@@ -48,6 +49,7 @@ var nomDeLaTable = new Enregistreur("tableNom", stockage);
 var lesObjets = new Enregistreur("table", stockage);
 var lObjet = new Enregistreur("objet", stockage);
 var laStructure = new Enregistreur("structure", stockage)
+var avecPhoto = new Enregistreur("photo", stockage)
 var nomDuSite = "La commode de Julie";
 
 document.addEventListener("DOMContentLoaded", function() {
@@ -104,6 +106,7 @@ function declarerNouvellePage(page) {
 	}
 	if ("TIR" == page) {
 		if ("MOO" == pageCourante()) { laPage.pop(); }
+		if ("CRT" == pageCourante()) { laPage.pop(); }
 		document.getElementById("creerObjet").className = "button is-link is-flex";
 	} else {
 		document.getElementById("creerObjet").className = "button is-link is-hidden";
@@ -130,6 +133,11 @@ function memoriserDonneePage() {
 	} else if ("CRT" == pageCourante()) {
 		let donnee = new Object();
 		donnee["nom"] = document.getElementById("base").value;
+		document.getElementsByName("questionPhoto").forEach(element => {
+			if (element.checked) {
+				donnee["photo"] = element.value;
+			}
+		});
 		for (var i=0;i<4;i++) {
 			donnee["nom"+i] = document.getElementById("nom"+i).value;
 			donnee["type"+i] = document.getElementById("type"+i).value;
@@ -139,7 +147,7 @@ function memoriserDonneePage() {
 		let donnee = new Object();
 		donnee["id"] = document.getElementById("elemId").value;
 		donnee["nom"] = document.getElementById("elemNom").value;
-		donnee["icon"] = "";
+		donnee["icone"] = "";
 		donnee["supprimer"] = 0;
 		let champsLibres = new Object();
 		laStructure.get().forEach(function (unChamp, index) {
@@ -391,12 +399,12 @@ function choixEnHTML(titre, id, choix, selection, aide) {
 //
 // Demander au server de valider la connexion
 function demanderConnexion() {
-	const url = new Adresse(window.location.href,'connection'+extention);
+	const url = new RequeteGet(window.location.href,'connection'+extention);
 	lUtilisateur.set(document.getElementById("pseudo").value);
-	url.add("pseudo", lUtilisateur.get());
-	url.add("motDePasse", document.getElementById("mdp").value);
-	tracer('Clic sur demanderConnexion ' + url.get());
-	fetch(url.get())
+	url.ajouter("pseudo", lUtilisateur.get());
+	url.ajouter("motDePasse", document.getElementById("mdp").value);
+	tracer('Clic sur demanderConnexion ' + url.requete());
+	fetch(url.requete(), url.option())
 		.then(response => response.json(), err => console.error('DEBUG Une erreur lors du fetch ' + url.href + ' : ' + err))
 		.then(json => validerConnexion(json) );
 }
@@ -404,11 +412,11 @@ function demanderConnexion() {
 // Valider la connexion
 function validerConnexion(json) {
 	if (validerMessage(json)) {
-		const url = new Adresse(window.location.href,'commode'+extention);
-		url.add("pseudo", json.pseudo);
-		url.add("cle", json.cle);
-		tracer('execution de validerConnexion ' + url.get());
-		fetch(url.get())
+		const url = new RequeteGet(window.location.href,'commode'+extention);
+		url.ajouter("pseudo", json.pseudo);
+		url.ajouter("cle", json.cle);
+		tracer('execution de validerConnexion ' + url.requete());
+		fetch(url.requete(), url.option())
 			.then(response => response.json(), err => console.error('DEBUG Une erreur lors du fetch ' + url.href + ' : ' + err))
 			.then(json => requeteGenererPageCommode(json) );
 	} else {
@@ -472,13 +480,13 @@ function genererPageConnexion(){
 //
 function demanderCreationCompte() {
 	memoriserDonneePage();
-	const url = new Adresse(window.location.href,'compte'+extention);
-	url.add("pseudo", document.getElementById("pseudoCMP").value);
-	url.add("email", document.getElementById("eMailCMP").value);
-	url.add("mdp", document.getElementById("motDePasseCMP").value);
-	url.add("stockage", document.getElementById("stockageCMP").value);
-	tracer('Clic sur demanderCreationCompte ' + url.get());
-	fetch(url.get())
+	const url = new RequeteGet(window.location.href,'compte'+extention);
+	url.ajouter("pseudo", document.getElementById("pseudoCMP").value);
+	url.ajouter("email", document.getElementById("eMailCMP").value);
+	url.ajouter("mdp", document.getElementById("motDePasseCMP").value);
+	url.ajouter("stockage", document.getElementById("stockageCMP").value);
+	tracer('Clic sur demanderCreationCompte ' + url.requete());
+	fetch(url.requete(), url.option())
 		.then(
 			response => response.json(),
 			err => genererPageErreur(err, null))
@@ -569,14 +577,14 @@ function requeteGenererPageValidation(json){
 // Génération de la page Commode ("COM")
 //
 function demanderOuvrirTiroir(tiroirId) {
-	const url = new Adresse(window.location.href,'tiroir'+extention);
-	url.add("pseudo", lUtilisateur.get());
-	url.add("cle", laCle.get());
-	url.add("tiroir", tiroirId);
-	tracer('Clic sur demanderOuvrirTiroir ' + url.get());
-	fetch(url.get())
-		.then(response => response.json(), err => console.error('ERREUR Une erreur lors du fetch ' + url.href + ' : ' + err))
-		.then(json => requeteGenererPageTiroir(json) );
+	const url = new RequetePost(window.location.href,'tiroir'+extention);
+	url.ajouter("pseudo", lUtilisateur.get());
+	url.ajouter("cle", laCle.get());
+	url.ajouter("tiroir", tiroirId);
+	tracer('Clic sur demanderOuvrirTiroir ' + url.requete());
+	fetch(url.requete(), url.option())
+		.then(response => response.text(), err => console.error('ERREUR Une erreur lors du fetch ' + url.href + ' : ' + err))
+		.then(texte => requeteGenererPageTiroir(texte) );
 	return true;
 }
 
@@ -588,12 +596,13 @@ function requeteGenererPageCommode(json){
 	nomDeLaTable.reset();
 	lesObjets.reset();
 	laStructure.reset();
+	avecPhoto.reset();
 	if (messageEstValide(json)) {
 
 		const tiroirs = json.data.map(j => ({
 			nom: j.Nom,
 			id: j.id,
-			icon: j.icon,
+			icone: j.icone,
 			description: j.Description || "",
 			created_at: j.Creation || "",
 			updated_at: j.MiseAJour
@@ -635,17 +644,27 @@ function requeteGenererPageCommode(json){
 // #################################
 // Génération de la page Tiroir ("TIR")
 //
-function requeteGenererPageTiroir(leTiroir){
+function requeteGenererPageTiroir(texte){
 
-	tracer('appel de la fonction requeteGenererPageTiroir '+leTiroir.cle);
+	tracer('appel de la fonction requeteGenererPageTiroir '+texte);
 //	tracerTable(leTiroir);
 
-	if (messageEstValide(leTiroir)) {
+	let leTiroir = "";
+	try {
+		leTiroir = JSON.parse(texte);
+	} catch (e) {
+		genererPageErreur("ERREUR DU SERVEUR", "Erreur: "+e+"<br/>"+texte);
+	}
+
+	if ("" == leTiroir) {
+		genererPageErreur("ERREUR CLIENT", "Requête: "+texte);
+	} else if (messageEstValide(leTiroir)) {
 
 		leTiroirId.set(leTiroir.id);
 		nomDeLaTable.set(leTiroir.table);
 		let config = JSON.parse(leTiroir.config);
 		laStructure.set(config['structure']);
+		avecPhoto.set(config['photo']);
 		lesObjets.set(mettreAJourTiroir(leTiroir.data, laStructure.get()));
 
 		let html = "";
@@ -654,9 +673,9 @@ function requeteGenererPageTiroir(leTiroir){
 		} else {
 			let formateur = null;
 			if (leTiroir.data.length > nbMaxAvantAffichageCompact) {
-				formateur = new FormateurGrandTiroir();
+				formateur = new FormateurGrandTiroir(avecPhoto.get());
 			} else {
-				formateur = new FormateurPetitTiroir();
+				formateur = new FormateurPetitTiroir(avecPhoto.get());
 			}
 			html += formateur.commencer(laStructure.get());
 			lesObjets.get().forEach(objet => {
@@ -690,19 +709,24 @@ function requeteGenererPageTiroir(leTiroir){
 //
 function demanderCreationTiroir() {
 	memoriserDonneePage();
-	const url = new Adresse(window.location.href,'tiroirCreer'+extention);
-	url.add("pseudo", lUtilisateur.get());
-	url.add("cle", laCle.get());
-	url.add("nom", document.getElementById("base").value);
+	const url = new RequeteGet(window.location.href,'tiroirCreer'+extention);
+	url.ajouter("pseudo", lUtilisateur.get());
+	url.ajouter("cle", laCle.get());
+	url.ajouter("nom", document.getElementById("base").value);
+	document.getElementsByName("questionPhoto").forEach(element => {
+		if (element.checked) {
+			url.ajouter("photo", element.value);
+		}
+	});
 	for (var i=0;i<4;i++) {
 		let elementNom = document.getElementById("nom"+i).value;
 		if ("" != elementNom) {
-			url.add("nom"+i, elementNom);
-			url.add("type"+i, document.getElementById("type"+i).value);
+			url.ajouter("nom"+i, elementNom);
+			url.ajouter("type"+i, document.getElementById("type"+i).value);
 		}
 	}
-	tracer('Clic sur demanderCreationTiroir ' + url.get());
-	fetch(url.get())
+	tracer('Clic sur demanderCreationTiroir ' + url.requete());
+	fetch(url.requete(), url.option())
 		.then(
 			response => response.json(),
 			err => genererPageErreur(err, null))
@@ -734,7 +758,7 @@ function genererPageNouveauTiroir(){
 	html += `
               <div class="field is-grouped">
                 <div class="control">
-                  <button id="demanderCreationTiroir" class="button is-link">Créer le tiroir</button>
+                  <button name="demanderCreationTiroir" class="button is-link">Créer le tiroir</button>
                 </div>
 	      </div>`;
 
@@ -747,6 +771,24 @@ function genererPageNouveauTiroir(){
 	html += `
 	    <hr/>`;
 
+	let avecPhoto = "";
+	let sansPhoto = "";
+	if ("1" == lesPages.lireElement("CRT", "photo")) {
+		avecPhoto = " checked";
+	} else {
+		sansPhoto = " checked";
+	}
+	html += `
+	    <div class="field">
+	      Voulez vous pouvoir joindre des photos?
+              <div class="control">
+                <label class="radio"> <input type="radio" name="questionPhoto" value="1"${avecPhoto}> Oui </label>
+                <label class="radio"> <input type="radio" name="questionPhoto" value="0"${sansPhoto}> Non </label>
+              </div>
+            </div>`;
+	html += `
+	    <hr/>`;
+
 	html += chapitreEnHTML("Décrire les autres champs d'un objet du tiroir:", "");
 
 	for (var i=0;i<4;i++) {
@@ -754,11 +796,20 @@ function genererPageNouveauTiroir(){
 		html += choixEnHTML("Type du champ", "type"+i, ["DATE", "ENTIER", "TEXTE", "BOOLEEN"], lesPages.lireElement("CRT", "type"+i), "");
 	}
 
+	html += `
+              <div class="field is-grouped">
+                <div class="control">
+                  <button name="demanderCreationTiroir" class="button is-link">Créer le tiroir</button>
+                </div>
+	      </div>`;
+
 	html += "</div></div>";
 
 	document.querySelector(".corpDePage").innerHTML = html;
 	document.querySelector(".title").innerHTML = nomDuSite;
-	document.getElementById("demanderCreationTiroir").onclick = demanderCreationTiroir;
+	document.getElementsByName("demanderCreationTiroir").forEach(element => {
+		element.onclick = demanderCreationTiroir;
+	});
 
 	declarerNouvellePage("CRT");
 
@@ -778,19 +829,35 @@ function genererPageSuppressionObjet(objet){
 // #################################
 // Génération de la page de modification d'un élément ("MOO")
 //
-// Demander au server l'enregistrement
+// Demander au serveur d'enregistrer l'élément modifié ou créé
 function demanderEnregistrement() {
 	memoriserDonneePage();
-	const url = new Adresse(window.location.href,'objet'+extention);
-	url.add("pseudo", lUtilisateur.get());
-	url.add("cle", laCle.get());
-	url.add("tiroir", leTiroirId.get());
+	const url = new RequetePost(window.location.href,'objet'+extention);
+	url.ajouter("pseudo", lUtilisateur.get());
+	url.ajouter("cle", laCle.get());
+	url.ajouter("tiroir", leTiroirId.get());
 	let commande = "";
 	let jsonCmd = new Object();
 	let jsonRecord = new Object();
 	jsonCmd["id"] = document.getElementById("elemId").value;
 	jsonCmd["nom"] = document.getElementById("elemNom").value;
-	jsonCmd["icon"] = "";
+	if ("1" == avecPhoto.get()) {
+		if (document.getElementById("photo").files[0]) {
+			if (1048576 < document.getElementById("photo").files[0].size) {
+				genererPageErreur("ERREUR DE TAILLE", "Le fichier séléctionné est trop gros. Il doit être inférieur à 1Mo");
+				return false;
+			}
+			url.ajouter("photo", document.getElementById("photo").files[0]);
+		} else {
+			document.getElementsByName("supprimerPhoto").forEach(element => {
+				tracer("supprimerPhoto "+element.checked+" valeur "+element.value);
+				if ((element.checked) && (1 == element.value)) {
+					tracer("supprimerPhoto Photo à supprimer");
+					url.ajouter("supprimerPhoto", "1");
+				}
+			});
+		}
+	}
 	jsonCmd["supprimer"] = 0;
 	laStructure.get().forEach(function (unChamp, index) {
 		jsonCmd[unChamp.nom] = document.getElementById("elem"+index).value;
@@ -798,13 +865,13 @@ function demanderEnregistrement() {
 	lObjet.set(jsonCmd);
 	tracer(JSON.stringify(jsonCmd));
 	commande = JSON.stringify(jsonCmd);
-	url.add("objet", commande);
-	tracer('Clic sur demanderEnregistrement ' + url.get());
-	fetch(url.get())
+	url.ajouter("objet", commande);
+	tracer('Clic sur demanderEnregistrement ' + url.requete());
+	fetch(url.requete(), url.option())
 		.then(
-			response => response.json(),
+			response => response.text(),
 			err => genererPageErreur(err, null))
-		.then(json => requeteGenererPageTiroir(json) )
+		.then(texte => requeteGenererPageTiroir(texte) )
 		.catch(err => genererPageFatal(err, "Erreur interne levée lors de l'enregistrement d'un élément du tiroir "+nomDeLaTable.get()+" de l'utilisateur "+lUtilisateur.get()+". Commande fautive : "+commande));
 }
 
@@ -824,6 +891,27 @@ function genererPageObjet(objet){
               <input id="elemId" class="input is-success is-hidden" type="text" placeholder="" value="${texte}">`;
 
 		html +=  saisieEnHTML("Nom", "elemNom", "TEXTE", "", objet.nom, null, null);
+
+		if ("1" == avecPhoto.get()) {
+			html += `
+              <div class="field">
+                <div class="control">
+                  <label class="file" for="photo"> Choisir une photo : 
+                    <input type="hidden" name="MAX_FILE_SIZE" value="1048576" />
+                    <input type="file" id="photo">
+                  </label>
+                </div>
+              </div>`;
+			if ("" != objet.icone) {
+				html += `
+	      <div class="field">
+                <div class="control">
+                  <label class="radio"> <input type="radio" name="supprimerPhoto" value="1"> Supprimer la photo </label>
+                  <label class="radio"> <input type="radio" name="supprimerPhoto" value="0" checked> Garder la photo </label>
+                </div>
+              </div>`;
+			}
+		}
 
 		tracerTable(laStructure);
 		laStructure.get().forEach(function (unChamp, index) {
@@ -867,7 +955,7 @@ function genererPageNouvelObjet(){
 	let champsLibres = new Object();
 	objet["id"] = null;
 	objet["nom"] = null;
-	objet["icon"] = null;
+	objet["icone"] = null;
 	objet["supprimer"] = 0;
 	laStructure.get().forEach(function (unChamp, index) {
 		champsLibres[unChamp.nom] = null;
@@ -976,6 +1064,18 @@ function genererInformation() {
 	if ("serviceWorker" in navigator) {
 		LeServiceWorker = "Actif.";
 	}
+	let LeXMLHttpRequest = "";
+	if ("function" === typeof XMLHttpRequest) {
+		LeXMLHttpRequest = "L'objet XMLHttpRequest est disponible dans votre navigateur.";
+	} else {
+		LeXMLHttpRequest = "L'objet XMLHttpRequest n'est pas disponible dans votre navigateur.";
+	}
+	let LeFormData = "";
+	if ("function" === typeof FormData) {
+		LeFormData = "L'objet FormData est disponible dans votre navigateur.";
+	} else {
+		LeFormData = "L'objet FormData n'est pas disponible dans votre navigateur.";
+	}
 
 	let html = `
           <div class="column">
@@ -990,7 +1090,14 @@ function genererInformation() {
 
 	html += elementEnHTML("Service worker :", LeServiceWorker);
 
+	html += elementEnHTML("XMLHttpRequest :", LeXMLHttpRequest);
+
+	html += elementEnHTML("FormData :", LeFormData);
+
 	html += `
+              <br/>
+              <hr/>
+              <br/>
 	      Ce site est hébergé sur PlanetHost.<br/>
 	      Ce site est mis en forme avec Bulma.<br/>
 
@@ -1014,10 +1121,10 @@ function generateUI(){
 	tracer('charger la page '+pageCourante());
 	if ("COM" == pageCourante()) {
 		// Charger les info pour afficher la commode
-		const url = new Adresse(window.location.href,'commode'+extention);
-		url.add("pseudo", lUtilisateur.get());
-		url.add("cle", laCle.get());
-		fetch(url.get())
+		const url = new RequeteGet(window.location.href,'commode'+extention);
+		url.ajouter("pseudo", lUtilisateur.get());
+		url.ajouter("cle", laCle.get());
+		fetch(url.requete(), url.option())
 			.then(response => response.json(), err => console.error('ERREUR Une erreur lors du fetch commode.php : ' + err))
 			.then(json => requeteGenererPageCommode(json) );
 	} else if ("CON" == pageCourante()) {
@@ -1043,14 +1150,14 @@ function generateUI(){
 		genererPageFatal("INCONUE", "Une erreur fatale non enregistrée était levée lors de la dernière utilisation du site");
 	} else if ("TIR" == pageCourante()) {
 		// Charger les info pour afficher le tiroir
-		const url = new Adresse(window.location.href,'tiroir'+extention);
-		url.add("pseudo", lUtilisateur.get());
-		url.add("cle", laCle.get());
-		url.add("tiroir", leTiroirId.get());
-		tracer('Clic sur demanderOuvrirTiroir ' + url.get());
-		fetch(url.get())
-			.then(response => response.json(), err => console.error('ERREUR Une erreur lors du fetch ' + url.href + ' : ' + err))
-			.then(json => requeteGenererPageTiroir(json) );
+		const url = new RequetePost(window.location.href,'tiroir'+extention);
+		url.ajouter("pseudo", lUtilisateur.get());
+		url.ajouter("cle", laCle.get());
+		url.ajouter("tiroir", leTiroirId.get());
+		tracer('Clic sur demanderOuvrirTiroir ' + url.requete());
+		fetch(url.requete(), url.option())
+			.then(response => response.text(), err => console.error('ERREUR Une erreur lors du fetch ' + url.href + ' : ' + err))
+			.then(texte => requeteGenererPageTiroir(texte) );
 	} else {
 		// afficher un page pour se connecter
 		tracer("La page n'est pas définie");

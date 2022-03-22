@@ -57,6 +57,21 @@ class Tiroir
                 return $message;
         }
 
+        function photoDUnObjet($idUtilisateur, $idTiroir, $idObjet)
+	{
+		$photo = "";
+                $leTiroir = new table($this->nom($idUtilisateur, $idTiroir));
+		if ($leTiroir->exist()) {
+			if ($leTiroir->selectByReference('id', $idObjet)) {
+				if (isset ($leTiroir->data['Photo'])) {
+					$photo = $leTiroir->data['Photo'];
+				}
+			}
+		}
+		return $photo;
+	}
+
+	// Aussi bien utilise pour creer ou mettre a jour
         function nouvelObjet($idUtilisateur, $idTiroir, $idObjet, $objet)
         {
                 $message = "";
@@ -81,7 +96,7 @@ class Tiroir
                 return $message;
         }
 
-        function creerTiroir($idUtilisateur, $nomDuTiroir, $lesChamps)
+        function creerTiroir($idUtilisateur, $nomDuTiroir, $lesChamps, $avecPhoto)
         {
                 $message = "";
                 $lesbases = new table("base");
@@ -90,8 +105,9 @@ class Tiroir
                 $laTable['Ecrivain'] = $idUtilisateur;
                 $laTable['Creation'] = date('Y-m-d H:i:s');
                 $laTable['MiseAJour'] = date('Y-m-d H:i:s');
-                $structure['structure'] = $lesChamps;
-                $laTable['Configuration'] = json_encode($structure, JSON_INVALID_UTF8_SUBSTITUTE|JSON_PRESERVE_ZERO_FRACTION|JSON_UNESCAPED_LINE_TERMINATORS|JSON_UNESCAPED_SLASHES|JSON_UNESCAPED_UNICODE);
+                $laConfig['structure'] = $lesChamps;
+                $laConfig['photo'] = $avecPhoto;
+                $laTable['Configuration'] = json_encode($laConfig, JSON_INVALID_UTF8_SUBSTITUTE|JSON_PRESERVE_ZERO_FRACTION|JSON_UNESCAPED_LINE_TERMINATORS|JSON_UNESCAPED_SLASHES|JSON_UNESCAPED_UNICODE);
                 if ($lesbases->insert($laTable)) {
                         $champ = [];
                         $this->id = mysqli_insert_id($lesbases->database->link);

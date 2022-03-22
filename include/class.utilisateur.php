@@ -22,6 +22,7 @@ class Utilisateurs extends table
 	var $bases;
 	var $derniereTable;
 	var $id;
+	var $repertoire;
 	var $pseudo;
 	var $config;
 
@@ -46,6 +47,7 @@ class Utilisateurs extends table
 		$this->bases = array();
 		$this->derniereTable = 0;
 		$this->id = 0;
+		$this->repertoire = "/tmp/";
 		$this->pseudo = 0;
 		$this->config = array();
 	}
@@ -162,6 +164,7 @@ class Utilisateurs extends table
 		$message = "";
 		if ($this->selectByReference("Nom", $pseudo)) {
 			$this->id = $this->data["id"];
+			$this->repertoire = "images/u".$this->id."/";
 			$this->pseudo = $pseudo;
 			$this->config = json_decode($this->data["Config"]);
 			$lesbases = new table("base");
@@ -181,14 +184,14 @@ class Utilisateurs extends table
 		return $message;
 	}
 
-	function creerTable($nomDuTiroir, $lesChamps)
+	function creerTable($nomDuTiroir, $lesChamps, $avecPhoto)
 	{
 		$message = "";
 		if (empty($this->id) || empty($this->pseudo)) {
 			$message = "L'utilisateur n'est pas séléctionné";
 		} else {
 			$tiroir = new Tiroir();
-			$message = $tiroir->creerTiroir($this->id, $nomDuTiroir, $lesChamps);
+			$message = $tiroir->creerTiroir($this->id, $nomDuTiroir, $lesChamps, $avecPhoto);
 			if (empty($message)) {
 				$this->derniereTable = $tiroir->id;
 			}

@@ -10,6 +10,7 @@
 	$utilisateur = isset ($_GET['pseudo']) ? $_GET['pseudo'] : "" ;
 	$cle = isset ($_GET['cle']) ? $_GET['cle'] : "" ;
 	$nomDuTiroir = isset ($_GET['nom']) ? $_GET['nom'] : "" ;
+	$avecPhoto = isset ($_GET['photo']) ? $_GET['photo'] : 0 ;
 	$laCle = "";
 	$message = "";
 	$identifiant = 0;
@@ -51,7 +52,7 @@
 			}
 		}
 		// Créer la nouvelle table
-		$message = $DB_utilisateurs->creerTable($nomDuTiroir, $lesChamps);
+		$message = $DB_utilisateurs->creerTable($nomDuTiroir, $lesChamps, $avecPhoto);
 		if (empty($message)) {
 			$identifiant = $DB_utilisateurs->derniereTable;
 		}

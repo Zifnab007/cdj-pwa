@@ -5,14 +5,23 @@
 	$PATH_INCLUDE = 'include/';
 	include_once($PATH_INCLUDE."class.utilisateur.php");
 	include_once($PATH_INCLUDE."class.table.php");
+	include_once($PATH_INCLUDE."formaterObjet.php");
 	include_once($PATH_INCLUDE."singleton.database.php");
 	include_once($PATH_INCLUDE."configuration.php");
 	include_once($PATH_INCLUDE."verificateur.php");
 
-	$utilisateur = isset ($_GET['pseudo']) ? $_GET['pseudo'] : "" ;
-	$cle = isset ($_GET['cle']) ? $_GET['cle'] : "" ;
-	$tiroir = isset ($_GET['tiroir']) ? $_GET['tiroir'] : "" ;
-	$objetCree = isset ($_GET['objet']) ? $_GET['objet'] : "" ;
+	function supprimerUnePhoto($tiroirs, $utilisateurs, $idTiroir, $idObjet) {
+		$photo = $tiroirs->photoDUnObjet($utilisateurs->id, $idTiroir, $idObjet);
+		if (!empty($photo)) {
+			 unlink("$utilisateurs->repertoire$photo");
+		}
+	}
+
+	$utilisateur = isset ($_POST['pseudo']) ? $_POST['pseudo'] : "" ;
+	$cle = isset ($_POST['cle']) ? $_POST['cle'] : "" ;
+	$tiroir = isset ($_POST['tiroir']) ? $_POST['tiroir'] : "" ;
+	$objetCree = isset ($_POST['objet']) ? $_POST['objet'] : "" ;
+	$supprimerPhoto = isset ($_POST['supprimerPhoto']) ? $_POST['supprimerPhoto'] : "0" ;
 	$listeDesTables = [];
 	$laCle = "";
 	$nomTiroir = "";
@@ -71,18 +80,41 @@
 				$objetDansTable["Creation"] = date('Y-m-d H:i:s');
 			}
 			$objetDansTable["MiseAJour"] = date('Y-m-d H:i:s');
-			$objetDansTable["Photo"] = $lObjet["icon"];
 			$objetDansTable["supprimer"] = $lObjet["supprimer"];
-			$i = 0;
-			foreach ($laStructure as $champ){
-				$messageValidation = champEstValide($lObjet[$champ->nom], $champ->type, $champ->nom);
-				if ("DATE" == $champ->type) {
-					$objetDansTable["ch".$i] = convertirDate($lObjet[$champ->nom]);
-				} else {
-					$objetDansTable["ch".$i] = $lObjet[$champ->nom];
+			if (empty($message)) {
+				$i = 0;
+				foreach ($laStructure as $champ){
+					$messageValidation = champEstValide($lObjet[$champ->nom], $champ->type, $champ->nom);
+					if ("DATE" == $champ->type) {
+						$objetDansTable["ch".$i] = convertirDate($lObjet[$champ->nom]);
+					} else {
+						$objetDansTable["ch".$i] = $lObjet[$champ->nom];
+					}
+					$message = $message.$messageValidation;
+					$i++;
 				}
-				$message = $message.$messageValidation;
-				$i++;
+			}
+			if (isset ($_FILES['photo'])) {
+				$nomImage = md5(uniqid(rand(), true));
+				$objetDansTable["Photo"] = $nomImage;
+				if (1048576 < $_FILES['photo']['size']) {
+					$message = "La taille du fichier est trop grande";
+				} else {
+					if (	('image/jpeg' == $_FILES['photo']['type']) ||
+						('image/webp' == $_FILES['photo']['type']) ||
+						('image/gif' == $_FILES['photo']['type'])) {
+						if (move_uploaded_file($_FILES['photo']['tmp_name'], "$DB_utilisateurs->repertoire$nomImage")) {
+							supprimerUnePhoto($lesTiroirs, $DB_utilisateurs, $tiroir, $idObjet);
+						} else {
+							$message = "Erreur sur le serveur lors de la copie du fichier";
+						}
+					} else {
+						$message = "Il faut selectionner une image JPEG, GIF ou WEBP (pas ".$_FILES['photo']['type'].").";
+					}
+				}
+			} else if ($supprimerPhoto) {
+				$objetDansTable["Photo"] = null;
+				supprimerUnePhoto($lesTiroirs, $DB_utilisateurs, $tiroir, $idObjet);
 			}
 			if (empty($message)) {
 				$message = $lesTiroirs->nouvelObjet($DB_utilisateurs->id, $tiroir, $idObjet, $objetDansTable);
@@ -94,19 +126,7 @@
 		}
 		if (empty($message)) {
 			foreach ($lesTiroirs->objets as $objet){
-				$unObjet["id"] = $objet["id"];
-				$unObjet["nom"] = $objet["Nom"];
-				$unObjet["created_at"] = $objet["Creation"];
-				$unObjet["updated_at"] = $objet["MiseAJour"];
-				$unObjet["icon"] = $objet["Photo"];
-				$unObjet["supprimer"] = $objet["supprimer"];
-				$unObjet["record"] = [];
-				$i = 0;
-				foreach ($laStructure as $champ){
-					$unObjet["record"][$champ->nom] = $objet["ch".$i];
-					$i++;
-				}
-				$lesObjets[] = $unObjet;
+				$lesObjets[] = formaterObjet ($objet, $laStructure, $DB_utilisateurs->repertoire);
 			}
 		}
 	}

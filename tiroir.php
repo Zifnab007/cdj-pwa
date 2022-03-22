@@ -5,12 +5,16 @@
 	$PATH_INCLUDE = 'include/';
 	include_once($PATH_INCLUDE."class.utilisateur.php");
 	include_once($PATH_INCLUDE."class.table.php");
+	include_once($PATH_INCLUDE."formaterObjet.php");
 	include_once($PATH_INCLUDE."singleton.database.php");
 	include_once($PATH_INCLUDE."configuration.php");
 
-	$utilisateur = isset ($_GET['pseudo']) ? $_GET['pseudo'] : "" ;
-	$cle = isset ($_GET['cle']) ? $_GET['cle'] : "" ;
-	$tiroir = isset ($_GET['tiroir']) ? $_GET['tiroir'] : "" ;
+	$utilisateur = "";
+	$cle = "";
+	$tiroir = "";
+	$utilisateur = isset ($_POST['pseudo']) ? $_POST['pseudo'] : "" ;
+	$cle = isset ($_POST['cle']) ? $_POST['cle'] : "" ;
+	$tiroir = isset ($_POST['tiroir']) ? $_POST['tiroir'] : "" ;
 	$listeDesTables = [];
 	$laCle = "";
 	$nomTiroir = "";
@@ -53,19 +57,7 @@
 		if (empty($message)) {
 			$laConfig = json_decode($config);
 			foreach ($lesTiroirs->objets as $objet){
-				$unObjet["id"] = $objet["id"];
-				$unObjet["nom"] = $objet["Nom"];
-				$unObjet["created_at"] = $objet["Creation"];
-				$unObjet["updated_at"] = $objet["MiseAJour"];
-				$unObjet["icon"] = $objet["Photo"];
-				$unObjet["supprimer"] = $objet["supprimer"];
-				$unObjet["record"] = [];
-				$i = 0;
-				foreach ($laConfig->structure as $champ){
-					$unObjet["record"][$champ->nom] = $objet["ch".$i];
-					$i++;
-				}
-				$lesObjets[] = $unObjet;
+				$lesObjets[] = formaterObjet ($objet, $laConfig->structure, $DB_utilisateurs->repertoire);
 			}
 		}
 	}

@@ -1,12 +1,15 @@
-// Classe "Adresse" pour construire les requêttes
-export class Adresse {
+// Classe "RequeteGet" pour construire les requêtes GET
+export class RequeteGet {
 	constructor (base, page) {
 		this.url = base+"/"+page;
 	}
-	get() {
+	requete() {
 		return this.url;
 	}
-	add(cle, valeur) {
+	option() {
+		return null;
+	}
+	ajouter(cle, valeur) {
 		let urlLocale = ""
 		if (-1 == this.url.indexOf("?")) {
 			urlLocale = this.url+"?";
