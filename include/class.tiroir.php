@@ -72,7 +72,7 @@ class Tiroir
 	}
 
 	// Aussi bien utilise pour creer ou mettre a jour
-        function nouvelObjet($idUtilisateur, $idTiroir, $idObjet, $objet)
+        function creerObjet($idUtilisateur, $idTiroir, $idObjet, $objet)
         {
                 $message = "";
                 $this->objets = [];
@@ -95,6 +95,24 @@ class Tiroir
                 }
                 return $message;
         }
+
+	function supprimerObjet($idUtilisateur, $idTiroir, $idObjet)
+        {
+                $message = "";
+                $leTiroir = new table($this->nom($idUtilisateur, $idTiroir));
+		if ($leTiroir->exist()) {
+			if (empty($idObjet)) {
+                		$message = "L'objet ".$idObjet." n'existe pas.";
+			} else {
+				if (!$leTiroir->deleteByReference("id", $idObjet)) {
+                			$message = "Imposible de supprimer un objet.";
+				}
+			}
+		} else {
+			$message = "Le tiroir ".$idTiroir." n'existe pas.";
+                }
+                return $message;
+	}
 
         function creerTiroir($idUtilisateur, $nomDuTiroir, $lesChamps, $avecPhoto)
         {

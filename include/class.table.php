@@ -324,7 +324,8 @@ class table
   {
 
     $sql = "DELETE FROM $this->maTable WHERE ".mysqli_real_escape_string($this->database->link, $fieldName)." = ".mysqli_real_escape_string($this->database->link, $value).";";
-    $result = $this->database->query($sql);
+    $report = $this->database->query($sql);
+    return $report;
 
   }
 

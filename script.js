@@ -10,7 +10,7 @@
 // OBJ Objet
 // CRO CreationObjet            (genererPageNouvelObjet)
 // MOO ModifObjet               (genererPageObjet)
-// SUO SuppressionObjet
+// SUO SuppressionObjet         (genererPageSuppressionObjet)
 // ERR Erreur                   (genererPageErreur)
 // FAT Erreur                   (genererPageFatal)
 // INF Information		(genererInformation)
@@ -189,10 +189,10 @@ function messageEstValide(json) {
 	} else if (("" == json.cle) || (json.cle != laCle.get()) || (json.pseudo != lUtilisateur.get())) {
 		lUtilisateur.reset();
 		laCle.reset();
-		console.error('Invalider '+json.pseudo);
+		console.error('Le message est invalide pseudo:'+json.pseudo);
 		return false;
 	} else {
-		console.error('Invalider '+json.pseudo+' message :'+json.erreur);
+		console.error('Le message est invalide pseudo:'+json.pseudo+' message :'+json.erreur);
 		return false;
 	}
 }
@@ -647,7 +647,6 @@ function requeteGenererPageCommode(json){
 function requeteGenererPageTiroir(texte){
 
 	tracer('appel de la fonction requeteGenererPageTiroir '+texte);
-//	tracerTable(leTiroir);
 
 	let leTiroir = "";
 	try {
@@ -820,9 +819,50 @@ function genererPageNouveauTiroir(){
 // Génération de la page de suppression d'un élément ("SUO")
 //
 // Demander au server la suppression de l'objet
+function demanderSuppressionObjet(objetId) {
+	const url = new RequetePost(window.location.href,'objetSupprimer'+extention);
+	url.ajouter("pseudo", lUtilisateur.get());
+	url.ajouter("cle", laCle.get());
+	url.ajouter("tiroir", leTiroirId.get());
+	url.ajouter("objetId", objetId);
+	tracer('Clic sur demanderSuppressionObjet ' + url.requete());
+	fetch(url.requete(), url.option())
+		.then(
+			response => response.text(),
+			err => genererPageErreur(err, null))
+		.then(texte => requeteGenererPageTiroir(texte) )
+		.catch(err => genererPageFatal(err, "Erreur interne levée lors de la suppression d'un élément du tiroir "+nomDeLaTable.get()+" de l'utilisateur "+lUtilisateur.get()+". Commande fautive : "+commande));
+}
+
+// Generer la page
 function genererPageSuppressionObjet(objet){
 
 	tracer('appel de la fonction genererPageSuppressionObjet '+objet.id);
+
+	let html = `
+          <section class="section is-medium has-background-primary">
+
+              <div class="field">
+                <div class="control">
+                  <button id="demanderSuppressionObjet" class="button is-danger">Confirmer la suppression</button>
+                </div>
+              </div>
+
+              <div class="field">
+                <div class="control">
+                  <button id="annulerSuppressionObjet" class="button is-link">Annuler</button>
+                </div>
+              </div>
+
+          </section>`;
+
+	document.querySelector(".corpDePage").innerHTML = html;
+	document.getElementById("demanderSuppressionObjet").onclick = function() { demanderSuppressionObjet(objet.id); };
+	document.getElementById("annulerSuppressionObjet").onclick = allerPagePrecedante;
+
+	declarerNouvellePage("SUO");
+
+	tracer("La page MODIFIER ELEMENT (SUO) est chargée");
 
 }
 
@@ -1124,6 +1164,7 @@ function generateUI(){
 		const url = new RequeteGet(window.location.href,'commode'+extention);
 		url.ajouter("pseudo", lUtilisateur.get());
 		url.ajouter("cle", laCle.get());
+		tracer('Charger la page COM ' + url.requete());
 		fetch(url.requete(), url.option())
 			.then(response => response.json(), err => console.error('ERREUR Une erreur lors du fetch commode.php : ' + err))
 			.then(json => requeteGenererPageCommode(json) );
@@ -1148,13 +1189,17 @@ function generateUI(){
 	} else if ("FAT" == pageCourante()) {
 		// Afficher la page d'erreur fatale
 		genererPageFatal("INCONUE", "Une erreur fatale non enregistrée était levée lors de la dernière utilisation du site");
-	} else if ("TIR" == pageCourante()) {
+	} else if (("TIR" == pageCourante()) || ("SUO" == pageCourante())) {
 		// Charger les info pour afficher le tiroir
+		if ("SUO" == pageCourante()) {
+			// on ne mémorise pas les info de la page de suppression d'un objet, il faut donc la supprimer de l'historique
+			laPage.pop();
+		}
 		const url = new RequetePost(window.location.href,'tiroir'+extention);
 		url.ajouter("pseudo", lUtilisateur.get());
 		url.ajouter("cle", laCle.get());
 		url.ajouter("tiroir", leTiroirId.get());
-		tracer('Clic sur demanderOuvrirTiroir ' + url.requete());
+		tracer('Charger la page TIR ' + url.requete());
 		fetch(url.requete(), url.option())
 			.then(response => response.text(), err => console.error('ERREUR Une erreur lors du fetch ' + url.href + ' : ' + err))
 			.then(texte => requeteGenererPageTiroir(texte) );

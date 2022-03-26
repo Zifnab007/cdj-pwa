@@ -28,19 +28,19 @@ export class FormateurPetitTiroir {
         <div class="message-header">`;
 		if (this.photo && ("" != element.icone)) {
 			html += `
-	  <figure class="image is-128x128">
+          <figure class="image is-128x128">
             <img src="${element.icone}">
           </figure>`;
 		}
 		html += `
           <p>${element.nom}</p>
           <label class="input is-hidden">${element.id}</label>
-	  <div class="field is-grouped">
+          <div class="field is-grouped">
             <p class="control">
-	      <buttom class="button is-warning" id="M${element.id}">Mod.</buttom>
+              <buttom class="button is-warning" id="M${element.id}">Mod.</buttom>
             </p>
             <p class="control">
-	      <button class="button is-danger" id="S${element.id}">Sup.</buttom>
+              <button class="button is-danger" id="S${element.id}">Sup.</buttom>
             </p>
           </div>
         </div>
@@ -57,7 +57,7 @@ export class FormateurPetitTiroir {
           <br/>
           <strong>Création</strong> le <time datetime="${
                     element.created_at
-                  }">${dateHeureFormatage.format(new Date(element.created_at))}</time><br/>
+                  }">${dateHeureFormatage.format(new Date(element.created_at))}</time>
           <strong>Mise à jour</strong> le <time datetime="${
                     element.updated_at
                   }">${dateHeureFormatage.format(new Date(element.updated_at))}</time><br/>
