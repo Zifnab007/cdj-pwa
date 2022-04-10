@@ -127,7 +127,6 @@ function memoriserDonneePage() {
 		let donnee = new Object();
 		donnee["pseudo"] = document.getElementById("pseudoCMP").value;
 		donnee["email"] = document.getElementById("eMailCMP").value;
-		donnee["mdp"] = document.getElementById("motDePasseCMP").value;
 		donnee["stockage"] = document.getElementById("stockageCMP").value;
 		lesPages.nouvellePage("CMP", donnee);
 	} else if ("CRT" == pageCourante()) {
@@ -394,19 +393,33 @@ function choixEnHTML(titre, id, choix, selection, aide) {
 	return html;
 }
 
+async function digestMessage(message) {
+	const msgUint8 = new TextEncoder().encode(message);                           // encode as (utf-8) Uint8Array
+	const hashBuffer = await crypto.subtle.digest('SHA-256', msgUint8);           // hash the message
+	const hashArray = Array.from(new Uint8Array(hashBuffer));                     // convert buffer to byte array
+	const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join(''); // convert bytes to hex string
+	return hashHex;
+}
+
 // ###################################
 // Génération de la page Connexion ("CON")
 //
 // Demander au server de valider la connexion
-function demanderConnexion() {
+async function demanderConnexion() {
 	const url = new RequeteGet(window.location.href,'connection'+extention);
 	lUtilisateur.set(document.getElementById("pseudo").value);
 	url.ajouter("pseudo", lUtilisateur.get());
-	url.ajouter("motDePasse", document.getElementById("mdp").value);
+	let motDePasseHache = await digestMessage(document.getElementById("mdp").value);
+	url.ajouter("motDePasse", motDePasseHache);
 	tracer('Clic sur demanderConnexion ' + url.requete());
-	fetch(url.requete(), url.option())
-		.then(response => response.json(), err => console.error('DEBUG Une erreur lors du fetch ' + url.href + ' : ' + err))
-		.then(json => validerConnexion(json) );
+	try {
+		fetch(url.requete(), url.option())
+			.then(response => response.json(), err => console.error('DEBUG Une erreur lors du fetch ' + url.href + ' : ' + err))
+			.then(json => validerConnexion(json) );
+	} catch (e) {
+		genererPageFatal("JAVASCRIPT", "fetch : "+e);
+		return;
+	}
 }
 
 // Valider la connexion
@@ -469,7 +482,12 @@ function genererPageConnexion(){
 	validerEntree(document.getElementById("pseudo"), "pseudoOK", "pseudoKO", "pseudo");
 	document.getElementById("pseudo").addEventListener('input', function (){validerEntree(this, "pseudoOK", "pseudoKO", "pseudo")});
 	validerEntree(document.getElementById("mdp"), "mdpOK", "mdpKO", "password");
-	document.getElementById("mdp").addEventListener('input', function (){validerEntree(this, "mdpOK", "mdpKO", "password")});
+	try {
+		document.getElementById("mdp").addEventListener('input', function (){validerEntree(this, "mdpOK", "mdpKO", "password")});
+	} catch (e) {
+		genererPageFatal("JAVASCRIPT", "addEventListener('input', ...) : "+e);
+		return;
+	}
 	declarerNouvellePage("CON");
 	tracer("La page CONNEXION (CON) est chargée");
 }
@@ -478,12 +496,13 @@ function genererPageConnexion(){
 // Génération de la page de création de compte ("CMP")
 //
 //
-function demanderCreationCompte() {
+async function demanderCreationCompte() {
 	memoriserDonneePage();
 	const url = new RequeteGet(window.location.href,'compte'+extention);
 	url.ajouter("pseudo", document.getElementById("pseudoCMP").value);
 	url.ajouter("email", document.getElementById("eMailCMP").value);
-	url.ajouter("mdp", document.getElementById("motDePasseCMP").value);
+	let motDePasseHache = await digestMessage(document.getElementById("motDePasseCMP").value);
+	url.ajouter("mdp", motDePasseHache);
 	url.ajouter("stockage", document.getElementById("stockageCMP").value);
 	tracer('Clic sur demanderCreationCompte ' + url.requete());
 	fetch(url.requete(), url.option())
@@ -491,7 +510,7 @@ function demanderCreationCompte() {
 			response => response.json(),
 			err => genererPageErreur(err, null))
 		.then(json => requeteGenererPageValidation(json) )
-		.catch(err => genererPageFatal(err, "Erreur interne levée lors de la création d'un compte pour "+document.getElementById("pseudo").value+" avec l'email "+document.getElementById("eMail").value));
+		.catch(err => genererPageFatal(err, "Erreur interne levée lors de la création d'un compte pour "+document.getElementById("pseudoCMP").value+" avec l'email "+document.getElementById("eMailCMP").value));
 
 }
 
@@ -1085,7 +1104,7 @@ function genererPageFatal(erreur = "ERREUR FATALE INDEFINIE", info = "Aucun info
 // Génération de la page d'information ("INF")
 //
 // Generer la page
-function genererInformation() {
+async function genererInformation() {
 
 	tracer('appel de la fonction genererInformation');
 	memoriserDonneePage();
@@ -1104,17 +1123,38 @@ function genererInformation() {
 	if ("serviceWorker" in navigator) {
 		LeServiceWorker = "Actif.";
 	}
+
 	let LeXMLHttpRequest = "";
-	if ("function" === typeof XMLHttpRequest) {
-		LeXMLHttpRequest = "L'objet XMLHttpRequest est disponible dans votre navigateur.";
-	} else {
-		LeXMLHttpRequest = "L'objet XMLHttpRequest n'est pas disponible dans votre navigateur.";
+	try {
+		if ("function" === typeof XMLHttpRequest) {
+			LeXMLHttpRequest = "L'objet XMLHttpRequest est disponible dans votre navigateur.";
+		} else {
+			LeXMLHttpRequest = "L'objet XMLHttpRequest n'est pas disponible dans votre navigateur.";
+		}
+	} catch (e) {
+		let fonctionHachage = "Exception: "+e;
 	}
+
+	let fonctionHachage = "";
+	try {
+		if ("function" === typeof crypto.subtle.digest) {
+			fonctionHachage = "La function de hachage des mots de passe est disponible dans votre navigateur.";
+		} else {
+			fonctionHachage = "La function de hachage des mots de passe n'est pas disponible dans votre navigateur. <strong>La connection n'est pas possible.</strong>";
+		}
+	} catch (e) {
+		let fonctionHachage = "Exception: "+e;
+	}
+
 	let LeFormData = "";
-	if ("function" === typeof FormData) {
-		LeFormData = "L'objet FormData est disponible dans votre navigateur.";
-	} else {
-		LeFormData = "L'objet FormData n'est pas disponible dans votre navigateur.";
+	try {
+		if ("function" === typeof FormData) {
+			LeFormData = "L'objet FormData est disponible dans votre navigateur.";
+		} else {
+			LeFormData = "L'objet FormData n'est pas disponible dans votre navigateur.";
+		}
+	} catch (e) {
+		let fonctionHachage = "Exception: "+e;
 	}
 
 	let html = `
@@ -1130,9 +1170,13 @@ function genererInformation() {
 
 	html += elementEnHTML("Service worker :", LeServiceWorker);
 
+	html += "<hr/>";
+
 	html += elementEnHTML("XMLHttpRequest :", LeXMLHttpRequest);
 
 	html += elementEnHTML("FormData :", LeFormData);
+
+	html += elementEnHTML("Hachage :", fonctionHachage);
 
 	html += `
               <br/>

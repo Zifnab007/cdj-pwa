@@ -7,7 +7,7 @@
 
 function mdpEstValide($mdp) {
 	$message = "";
-	if (1 === preg_match("/^[ -~]{6,32}$/", $mdp)) {
+	if (1 === preg_match("/^[0-9abcdef]{64}$/", $mdp)) {
 		$message = "";
 	} else {
 		$message = "Le mot de passe \"".$mdp."\" n'est pas valide. ";

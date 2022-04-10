@@ -145,10 +145,18 @@ class Utilisateurs extends table
 				// Encoder le mot de passe
 				$lUtilisateur['Pass'] = password_hash($motDePasse, PASSWORD_DEFAULT);
 				$lUtilisateur['Cle'] = md5(uniqid(rand(), true));
-				$lUtilisateur['Actif'] = FALSE;
+				$lUtilisateur['Actif'] = "0";
 				$lUtilisateur['Config'] = json_encode($config);
 				if ($this->insert($lUtilisateur)) {
-					if (!$this->selectByReference("Nom", $pseudo)) {
+					if ($this->selectByReference("Nom", $pseudo)) {
+						$this->id = $this->data["id"];
+						$this->repertoire = "images/u".$this->id."/";
+						$this->pseudo = $pseudo;
+						$this->config = json_decode($this->data["Config"]);
+						if (!is_dir($this->repertoire)) {
+							mkdir($this->repertoire);
+						}
+					} else {
 						$message = "Erreur interne à la lecture de la database.";
 					};
 				} else {

@@ -11,12 +11,13 @@
 	include_once($PATH_INCLUDE."verificateur.php");
 
 	function supprimerUnePhoto($tiroirs, $utilisateurs, $idTiroir, $idObjet) {
-		$photo = $tiroirs->photoDUnObjet($utilisateurs->id, $idTiroir, $idObjet);
-		if (!empty($photo)) {
-			 unlink("$utilisateurs->repertoire$photo");
+		if (!empty($idObjet)) {
+			$photo = $tiroirs->photoDUnObjet($utilisateurs->id, $idTiroir, $idObjet);
+			if (!empty($photo)) {
+			 	unlink("$utilisateurs->repertoire$photo");
+			}
 		}
 	}
-
 	$utilisateur = isset ($_POST['pseudo']) ? $_POST['pseudo'] : "" ;
 	$cle = isset ($_POST['cle']) ? $_POST['cle'] : "" ;
 	$tiroir = isset ($_POST['tiroir']) ? $_POST['tiroir'] : "" ;
@@ -104,6 +105,7 @@
 						('image/webp' == $_FILES['photo']['type']) ||
 						('image/gif' == $_FILES['photo']['type'])) {
 						if (move_uploaded_file($_FILES['photo']['tmp_name'], "$DB_utilisateurs->repertoire$nomImage")) {
+							// Si c'est une nouvelle photo il faut supprimer l'ancienne
 							supprimerUnePhoto($lesTiroirs, $DB_utilisateurs, $tiroir, $idObjet);
 						} else {
 							$message = "Erreur sur le serveur lors de la copie du fichier";
