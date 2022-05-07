@@ -46,7 +46,7 @@ class Tiroir
                 	if ($leTiroir->selectAll()) {
                         	$this->objets[] = $leTiroir->data;
                         	$index = 1;
-                        	while (($index < TABLE_MAX) && $leTiroir->selectNext()) {
+                        	while (($index < ELEMENT_MAX) && $leTiroir->selectNext()) {
                                 	$index++;
                                 	$this->objets[] = $leTiroir->data;
                         	}

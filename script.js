@@ -5,6 +5,7 @@
 // COM Commode			(requeteGenererPageCommode)
 // TIR Tiroir			(requeteGenererPageTiroir)
 // CRT CreationTiroir		(genererPageNouveauTiroir)
+// IMP ImporttatioTiroir	(genererPageImporterTiroir)
 // MOT ModifTiroir
 // SUT SuppressionTiroir
 // OBJ Objet
@@ -100,8 +101,10 @@ function declarerNouvellePage(page) {
 		document.getElementById("retour").className = "button is-link is-flex";
 	}
 	if ("COM" == page) {
+		document.getElementById("importerTiroir").className = "button is-link is-flex";
 		document.getElementById("creerTiroir").className = "button is-link is-flex";
 	} else {
+		document.getElementById("importerTiroir").className = "button is-link is-hidden";
 		document.getElementById("creerTiroir").className = "button is-link is-hidden";
 	}
 	if ("TIR" == page) {
@@ -165,7 +168,7 @@ function allerPagePrecedante() {
 	generateUI();
 }
 
-function validerMessage(json) {
+function validerMessageEtEnregistrerCle(json) {
 if (json.pseudo == lUtilisateur.get() && ("" == json.erreur)) {
 	laCle.set(json.cle);
 	return true;
@@ -424,7 +427,7 @@ async function demanderConnexion() {
 
 // Valider la connexion
 function validerConnexion(json) {
-	if (validerMessage(json)) {
+	if (validerMessageEtEnregistrerCle(json)) {
 		const url = new RequeteGet(window.location.href,'commode'+extention);
 		url.ajouter("pseudo", json.pseudo);
 		url.ajouter("cle", json.cle);
@@ -720,6 +723,149 @@ function requeteGenererPageTiroir(texte){
 		genererPageErreur("L'AFFICHAGE DU TIROIR EST REFUSE", leTiroir.erreur);
 	}
 
+}
+
+// #####################################################
+// Génération de la page d'importation d'un Tiroir ("IMP")
+//
+// Demander au serveur d'importer un tiroir
+function demanderimportationTiroir() {
+	memoriserDonneePage();
+	const url = new RequetePost(window.location.href,'importer'+extention);
+	url.ajouter("pseudo", lUtilisateur.get());
+	url.ajouter("cle", laCle.get());
+	if (document.getElementById("fichierTsv").files[0]) {
+		if (1048576 < document.getElementById("fichierTsv").files[0].size) {
+			genererPageErreur("ERREUR DE TAILLE", "Le fichier séléctionné est trop gros. Il doit être inférieur à 1Mo");
+			return false;
+		}
+		url.ajouter("fichierTsv", document.getElementById("fichierTsv").files[0]);
+	} else {
+		genererPageErreur("ERREUR DE FICHIER", "Il faut séléctionner un fichier inférieur à 1Mo.");
+		return false;
+	}
+	tracer('Clic sur demanderEnregistrement ' + url.requete());
+	fetch(url.requete(), url.option())
+		.then(
+			response => response.text(),
+			err => genererPageErreur(err, null))
+		.then(texte => validerImportationTiroir(texte) )
+		.catch(err => genererPageFatal(err, "Erreur interne levée lors de l'importation d'un tiroir par l'utilisateur "+lUtilisateur.get()+". nom du fichier : "+document.getElementById("fichierTsv").files[0]));
+}
+// Valider l'importation du tiroir
+function validerImportationTiroir(texte) {
+
+	tracer('appel de la fonction validerImportationTiroir '+texte);
+
+	let reponse = "";
+	try {
+		reponse = JSON.parse(texte);
+	} catch (e) {
+		genererPageErreur("ERREUR DU SERVEUR", "Erreur: "+e+"<br/>"+texte);
+		reponse = "";
+	}
+
+	if ("" == reponse) {
+		genererPageErreur("ERREUR CLIENT", "Requête: "+texte);
+	} else if (messageEstValide(reponse)) {
+		if ("" != reponse.id) {
+			const url = new RequetePost(window.location.href,'tiroir'+extention);
+			url.ajouter("pseudo", lUtilisateur.get());
+			url.ajouter("cle", laCle.get());
+			url.ajouter("tiroir", reponse.id);
+			tracer('Clic sur demanderOuvrirTiroir ' + url.requete());
+			fetch(url.requete(), url.option())
+				.then(response => response.text(), err => console.error('ERREUR Une erreur lors du fetch ' + url.href + ' : ' + err))
+				.then(texte => requeteGenererPageTiroir(texte) );
+		} else {
+			genererPageErreur("L'IMPORT DU TIROIR EST REFUSEE", reponse.erreur);
+		}
+	} else if (lUtilisateur.estVide()) {
+		genererPageFatal("IMPOSSIBLE D'AFFICHER LA COMMONDE", "Les informations de validations sont incorectes. Il faut vous reconnecter. "+reponse.erreur);
+	} else {
+		genererPageErreur("ERREUR CLIENT", "Requête: "+texte);
+	}
+}
+//
+// Demander au serveur d'importer un tiroir
+function genererPageImporterTiroir() {
+
+	tracer('appel de la fonction genererPageImporterTiroir');
+
+		let html = `
+          <section class="section is-medium has-background-primary">
+
+            <form class="box">
+              <div class="field">
+                <div class="control">
+                  <label class="file" for="import"> Choisir fichier TSV d'import : 
+                    <input type="hidden" name="MAX_FILE_SIZE" value="1048576" />
+                    <input type="file" id="fichierTsv">
+                  </label>
+                </div>
+              </div>
+            </form>
+
+              <div class="field">
+                <div class="control">
+                  <button id="demanderimportationTiroir" class="button is-link">Importer le tiroir</button>
+                </div>
+              </div>
+
+            Créer un tiroir à partir d'un fichier TSV (une tabulation pour séparer les champs d'une ligne).<br/>
+            <br/>
+            Ce fichier doit avoir la structure par ligne:<br/>
+            <table class="table">
+              <tr>
+                <td>"Nom"</td>
+                <td>nom du tiroir</td>
+                <td></td>
+                <td></td>
+              </tr>
+              <tr>
+                <td>"Photo"</td>
+                <td>1 si le tiroir affiche des photos, sinon 0</td>
+                <td></td>
+                <td></td>
+              </tr>
+              <tr>
+                <td>"Nom"</td>
+                <td>nom du tiroir</td>
+                <td></td>
+                <td></td>
+              </tr>
+              <tr>
+                <td>"Champs"</td>
+                <td></td>
+                <td></td>
+                <td></td>
+              </tr>
+              <tr>
+                <td>"Nom" (*)</td>
+                <td>nom du 1er champ libre</td>
+                <td>nom du 2ème champ libre</td>
+                <td>.......</td>
+              </tr>
+              <tr>
+                <td>"TEXTE"</td>
+                <td>type du 1er champ libre</td>
+                <td>type du 2ème champ libre</td>
+                <td>.......</td>
+              </tr>
+            </table>
+            (*) Le premier champ doit être le nom et il est de type TEXTE.
+            <br/>
+            Le type des champs libres sont: "BOOLEEN", "DATE", "DATETIME", "ENTIER" et "TEXTE".
+            <br/>
+            <br/>
+
+          </section>`;
+
+                document.querySelector(".corpDePage").innerHTML = html;
+//		document.querySelector(".title").innerHTML = nomDuSite+" : "+nomDeLaTable.get();
+		document.getElementById("demanderimportationTiroir").onclick = demanderimportationTiroir;
+
+		declarerNouvellePage("IMP");
 }
 
 // #####################################################
@@ -1111,50 +1257,53 @@ async function genererInformation() {
 
 	let utilisateur = lUtilisateur.get();
 	if (null == utilisateur) { utilisateur = "non connecté"; }
+
 	let stokageLocal = "Indisponible.";
 	if ("localStorage" in window) {
 		stokageLocal = "Disponible.";
 	}
+
 	let DBLocale = "Indisponible.";
 	if ("indexedDB" in window) {
-		DBLocale = "Actif.";
+		DBLocale = "Disponible.";
 	}
+
 	let LeServiceWorker = "Indisponible.";
 	if ("serviceWorker" in navigator) {
-		LeServiceWorker = "Actif.";
+		LeServiceWorker = "Disponible.";
 	}
 
 	let LeXMLHttpRequest = "";
 	try {
 		if ("function" === typeof XMLHttpRequest) {
-			LeXMLHttpRequest = "L'objet XMLHttpRequest est disponible dans votre navigateur.";
+			LeXMLHttpRequest = "Fonction disponible.";
 		} else {
-			LeXMLHttpRequest = "L'objet XMLHttpRequest n'est pas disponible dans votre navigateur.";
+			LeXMLHttpRequest = "Fonction indisponible.";
 		}
 	} catch (e) {
-		let fonctionHachage = "Exception: "+e;
+		LeXMLHttpRequest = "Function indisponible (Exception: "+e+")";
 	}
 
 	let fonctionHachage = "";
 	try {
 		if ("function" === typeof crypto.subtle.digest) {
-			fonctionHachage = "La function de hachage des mots de passe est disponible dans votre navigateur.";
+			fonctionHachage = "Function disponible.";
 		} else {
-			fonctionHachage = "La function de hachage des mots de passe n'est pas disponible dans votre navigateur. <strong>La connection n'est pas possible.</strong>";
+			fonctionHachage = "La function de hachage des mots de passe n'est pas disponible dans votre navigateur. <strong>La connection n'est pas possible.</strong>.";
 		}
 	} catch (e) {
-		let fonctionHachage = "Exception: "+e;
+		fonctionHachage = "Fonction indisponible (Exception: "+e+"). <strong>La connection n'est pas possible.</strong>.";
 	}
 
 	let LeFormData = "";
 	try {
 		if ("function" === typeof FormData) {
-			LeFormData = "L'objet FormData est disponible dans votre navigateur.";
+			LeFormData = "Function disponible.";
 		} else {
-			LeFormData = "L'objet FormData n'est pas disponible dans votre navigateur.";
+			LeFormData = "Function indisponible.";
 		}
 	} catch (e) {
-		let fonctionHachage = "Exception: "+e;
+		LeFormData = "Indisponible (Exception: "+e+")";
 	}
 
 	let html = `
@@ -1174,9 +1323,9 @@ async function genererInformation() {
 
 	html += elementEnHTML("XMLHttpRequest :", LeXMLHttpRequest);
 
-	html += elementEnHTML("FormData :", LeFormData);
-
 	html += elementEnHTML("Hachage :", fonctionHachage);
+
+	html += elementEnHTML("FormData :", LeFormData);
 
 	html += `
               <br/>
@@ -1227,6 +1376,9 @@ function generateUI(){
 	} else if ("MOO" == pageCourante()) {
 		// Regéné la page de modification d'un objet
 		genererPageObjet(lesPages.lirePage("MOO"));
+	} else if ("IMP" == pageCourante()) {
+		// Afficher la page d'information
+		genererPageImporterTiroir();
 	} else if ("INF" == pageCourante()) {
 		// Afficher la page d'information
 		genererInformation();
@@ -1255,6 +1407,7 @@ function generateUI(){
 	document.getElementById("quiter").onclick = genererPageConnexion;
 	document.getElementById("retour").onclick = allerPagePrecedante;
 	document.getElementById("config").onclick = genererInformation;
+	document.getElementById("importerTiroir").onclick = genererPageImporterTiroir;
 	document.getElementById("creerTiroir").onclick = genererPageNouveauTiroir;
 	document.getElementById("creerObjet").onclick = function() {genererPageNouvelObjet();};
 

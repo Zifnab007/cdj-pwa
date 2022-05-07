@@ -35,6 +35,20 @@ function emailEstValide($email) {
         return $message;
 }
 
+function typeDeChampEstValide($valeur) {
+	if (("DATETIME" == $valeur) ||
+	    ("DATE" == $valeur) ||
+	    ("ENTIER" == $valeur) ||
+       	    ("TEXTE" == $valeur) ||
+       	    ("BOOLEEN" == $valeur)) {
+		return true;
+	} else {
+		return false;
+	}
+                  
+
+}
+
 function champEstValide($valeur, $type, $nom) {
 	$message = "";
 
@@ -42,20 +56,21 @@ function champEstValide($valeur, $type, $nom) {
 		if (1 === preg_match("/^[0-9]{0,10}$/", $valeur)) {
 			$message = "";
 		} else {
-			$message = "Le champ \"".$nom."\" n'est pas valide. ";
+			$message = "Le champ ENTIER \"".$nom."\" n'est pas valide. ";
 		}
 	}
-/*
-* -------------------------------------------------------
-* La date est verifee syntaximent AAAA/MM/JJ
-* AAAA = 1000 .. 2999
-* MM = 01 .. 12
-* JJ = 01 .. 31
-* Suivit d'une verfication sementique:
-* 2022/02/29 n'est pas valide
-* 2024/02/29 est valide
-* -------------------------------------------------------
- */
+
+	/*
+	* -------------------------------------------------------
+	* La date est verifee syntaximent AAAA/MM/JJ
+	* AAAA = 1000 .. 2999
+	* MM = 01 .. 12
+	* JJ = 01 .. 31
+	* Suivit d'une verfication sementique:
+	* 2022/02/29 n'est pas valide
+	* 2024/02/29 est valide
+	* -------------------------------------------------------
+ 	*/
 	if ("DATE" == $type) {
 		if (!empty($valeur) && (1 === preg_match("/^([012][0-9]|30|31)\/(0[1-9]|10|11|12)\/[1-9][0-9]{3}$/", $valeur))) {
 			$dateTable = explode("/", $valeur);
@@ -63,16 +78,16 @@ function champEstValide($valeur, $type, $nom) {
 				try {
 					$date = new DateTime($dateTable[2]."/".$dateTable[1]."/".$dateTable[0]);
 					if (false === $date) {
-						$message = "Le champ \"".$nom."\" n'est pas valide.<br/>";
+						$message = "Dans le champ DATE \"".$nom."\", la date ".$valeur." n'est pas valide.<br/>";
 			 		}
 				} catch (Exception $e) {
-					$message = "Le champ \"".$nom."\" n'est pas valide (exception interne).<br/>";
+					$message = "Dans le champ DATE \"".$nom."\", la date ".$valeur." n'est pas valide (exception interne).<br/>";
 				}
 			} else {
-				$message = "Dans le champ \"".$nom."\", la date ".$valeur." n'existe pas.<br/>";
+				$message = "Dans le champ DATE \"".$nom."\", la date ".$valeur." n'existe pas.<br/>";
 			}
 		} else if (!empty($valeur)) {
-			$message = "Le champ \"".$nom."\" n'est pas syntaxiquement correct.<br/>";
+			$message = "Dans le champ DATE \"".$nom."\", la date ".$valeur."  n'est pas syntaxiquement correcte.<br/>";
 		}
 	}
         return $message;
