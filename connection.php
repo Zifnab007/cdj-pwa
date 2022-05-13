@@ -3,18 +3,22 @@
 	header('Content-Type: application/json; charset: UTF-8');
 
 	$PATH_INCLUDE = 'include/';
+	include_once($PATH_INCLUDE."verificateur.php");
 	include_once($PATH_INCLUDE."class.utilisateur.php");
 	include_once($PATH_INCLUDE."singleton.database.php");
 	include_once($PATH_INCLUDE."configuration.php");
 
 	$utilisateur = isset ($_GET['pseudo']) ? $_GET['pseudo'] : "" ;
 	$motDePasse = isset ($_GET['motDePasse']) ? $_GET['motDePasse'] : "" ;
+	$enClair = isset ($_GET['enClair']) ? $_GET['enClair'] : "" ;
 	$laCle = "";
 	$message = "";
 
 	// Vérifier la syntaxe des variables
 	$message = $message.pseudoEstValide($utilisateur);
-	$message = $message.mdpEstValide($motDePasse);
+	if (empty($enClair)) {
+		$message = $message.mdpEstValide($motDePasse);
+	}
 
 	// Vérifier que l'utilisateur n'existe pas
 	if (empty($message)) {
@@ -26,7 +30,7 @@
 			$message = "Le mot de passe est vide.";
 		} else if (!$DB_utilisateurs->pseudoDejaDefini($utilisateur)) {
 			$message = "Le compte n'existe pas.";
-		} else if (!$DB_utilisateurs->estValide($utilisateur, $motDePasse)) {
+		} else if (!$DB_utilisateurs->estValide($utilisateur, $motDePasse, $enClair)) {
 			$message = "Le compte n'existe pas.";
 		} else if (!$DB_utilisateurs->estActif($utilisateur)) {
 			$message = "Le compte n'est pas actif.";

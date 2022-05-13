@@ -17,11 +17,11 @@
 // INF Information		(genererInformation)
 // generateUI
 import { extention } from "./config.js";
-import { tracer, tracerTable } from "./traceur.js";
+import { tracer, tracerTable, archiverLesTraces, tracesArchivees } from "./traceur.js";
 import { Enregistreur } from "./enregistreur.js";
 import { RequeteGet } from "./requeteGet.js";
 import { RequetePost } from "./requetePost.js";
-import { aujourdHui, dateENEnFR, elementFormatage } from "./outils.js";
+import { aujourdHui, dateDataBaseEnFR, elementFormatage } from "./outils.js";
 import { Pages } from "./pages.js";
 import { FormateurCommode } from "./formateurCommode.js";
 import { FormateurPetitTiroir } from "./formateurPetitTiroir.js";
@@ -38,6 +38,19 @@ const nbMaxAvantAffichageCompact = 4;
 var stockage = false;
 if ("localStorage" in window) {
 	stockage = true;
+}
+var hachageIndisponible = false;
+try {
+	if ("function" === typeof crypto.subtle.digest) {
+		hachageIndisponible = false;
+		tracer("La function de hachage des mots de passe est disponible.");
+	} else {
+		hachageIndisponible = true;
+		tracer("La function de hachage des mots de passe n'est pas disponible.");
+	}
+} catch (e) {
+	hachageIndisponible = true;
+	tracer("La function de hachage des mots de passe n'est pas disponible.");
 }
 
 var laPage = [];
@@ -207,7 +220,7 @@ function mettreAJourTiroir(objets, structure) {
 				if (null == valeur) {
 					objets[i].record[unChamp.nom] = "";
 				} else {
-					objets[i].record[unChamp.nom] = dateENEnFR(valeur);
+					objets[i].record[unChamp.nom] = dateDataBaseEnFR(valeur);
 				}
 			}
 		});
@@ -412,7 +425,13 @@ async function demanderConnexion() {
 	const url = new RequeteGet(window.location.href,'connection'+extention);
 	lUtilisateur.set(document.getElementById("pseudo").value);
 	url.ajouter("pseudo", lUtilisateur.get());
-	let motDePasseHache = await digestMessage(document.getElementById("mdp").value);
+	let motDePasseHache = "";
+	if (hachageIndisponible) {
+		motDePasseHache = document.getElementById("mdp").value;
+		url.ajouter("enClair", "1");
+	} else {
+		 motDePasseHache = await digestMessage(document.getElementById("mdp").value);
+	}
 	url.ajouter("motDePasse", motDePasseHache);
 	tracer('Clic sur demanderConnexion ' + url.requete());
 	try {
@@ -504,7 +523,13 @@ async function demanderCreationCompte() {
 	const url = new RequeteGet(window.location.href,'compte'+extention);
 	url.ajouter("pseudo", document.getElementById("pseudoCMP").value);
 	url.ajouter("email", document.getElementById("eMailCMP").value);
-	let motDePasseHache = await digestMessage(document.getElementById("motDePasseCMP").value);
+	let motDePasseHache = "";
+	if (hachageIndisponible) {
+		motDePasseHache = document.getElementById("motDePasseCMP").value;
+		url.ajouter("enClair", "1");
+	} else {
+		 motDePasseHache = await digestMessage(document.getElementById("motDePasseCMP").value);
+	}
 	url.ajouter("mdp", motDePasseHache);
 	url.ajouter("stockage", document.getElementById("stockageCMP").value);
 	tracer('Clic sur demanderCreationCompte ' + url.requete());
@@ -637,7 +662,12 @@ function requeteGenererPageCommode(json){
 		} else {
 			let formateur = new FormateurCommode();
 			tiroirs.forEach(tiroir => {
+				tracer("Tiroir "+tiroir.nom+" "+tiroir.created_at+" "+tiroir.updated_at);
+	try {
 				html += formateur.ajouter(tiroir);
+	} catch (e) {
+		html += "<br/>ERREUR DU SERVEUR Erreur: "+e+"<br/>";
+	}
 			});
 			html += formateur.finir();
 		}
@@ -1285,14 +1315,10 @@ async function genererInformation() {
 	}
 
 	let fonctionHachage = "";
-	try {
-		if ("function" === typeof crypto.subtle.digest) {
-			fonctionHachage = "Function disponible.";
-		} else {
-			fonctionHachage = "La function de hachage des mots de passe n'est pas disponible dans votre navigateur. <strong>La connection n'est pas possible.</strong>.";
-		}
-	} catch (e) {
-		fonctionHachage = "Fonction indisponible (Exception: "+e+"). <strong>La connection n'est pas possible.</strong>.";
+	if (hachageIndisponible) {
+		fonctionHachage = "La function de hachage des mots de passe n'est pas disponible dans votre navigateur. <strong>Le mot de passe sera envoyé en clair lors de la création du compte et de la connection.</strong> Dans tous les cas le mot de passe est cripté dans le serveur.";
+	} else {
+		fonctionHachage = "Function disponible.";
 	}
 
 	let LeFormData = "";
@@ -1334,8 +1360,15 @@ async function genererInformation() {
 	      Ce site est hébergé sur PlanetHost.<br/>
 	      Ce site est mis en forme avec Bulma.<br/>
 
-            </div>
+            </div>`;
 
+	html += `<hr/>
+
+            <div class="box">`;
+
+	html += elementEnHTML("Trace interne :", tracesArchivees);
+
+	html += `
           </div>`;
 
 	document.querySelector(".corpDePage").innerHTML = html;

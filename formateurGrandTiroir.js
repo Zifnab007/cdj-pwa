@@ -1,6 +1,6 @@
 // Classe "FormateurGrandTiroir" pour formater l'affichage d'un petit tiroir
 import { tracer, tracerTable } from "./traceur.js";
-import { dateHeureFormatage, elementFormatage } from "./outils.js";
+import { tempsDataBaseEnFR, elementFormatage } from "./outils.js";
 
 
 export class FormateurGrandTiroir {
@@ -119,8 +119,8 @@ export class FormateurGrandTiroir {
 			index++;
 		};
 		html += `
-	    <td>${dateHeureFormatage.format(new Date(element.created_at))}</td>
-	    <td>${dateHeureFormatage.format(new Date(element.updated_at))}</td>
+	    <td>${tempsDataBaseEnFR(element.created_at)}</td>
+	    <td>${tempsDataBaseEnFR(element.updated_at)}</td>
 	    <td><p class="control"> <button class="button is-danger" id="S${element.id}">Sup.</buttom> </p></td>
           </tr>`;
 

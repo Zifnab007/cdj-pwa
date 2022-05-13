@@ -12,13 +12,16 @@
 	$eMail = isset ($_GET['email']) ? $_GET['email'] : "" ;
 	$motDePasse = isset ($_GET['mdp']) ? $_GET['mdp'] : "" ;
 	$stockage = isset ($_GET['stockage']) ? $_GET['stockage'] : "" ;
+	$enClair = isset ($_GET['enClair']) ? $_GET['enClair'] : "" ;
 	$laCle = "";
 	$message = "";
 	//
 	// Vérifier la syntaxe des variables
 	$message = $message.pseudoEstValide($utilisateur);
 	$message = $message.emailEstValide($eMail);
-	$message = $message.mdpEstValide($motDePasse);
+	if (empty($enClair)) {
+		$message = $message.mdpEstValide($motDePasse);
+	}
 
 	// Vérifier que l'utilisateur n'existe pas
 	if (empty($message)) {
@@ -32,7 +35,7 @@
 			$message = "L'adresse e-mail ".$eMail." est déjà utilisée.";
 		} else {
 			$config['stockage'] = $stockage;
-			$message = $DB_utilisateurs->creerUtilisateur($utilisateur, $eMail, $motDePasse, $config);
+			$message = $DB_utilisateurs->creerUtilisateur($utilisateur, $eMail, $motDePasse, $config, $enClair);
 		}
 		if (empty($message)) {
 			$laCle = $DB_utilisateurs->data["Cle"];

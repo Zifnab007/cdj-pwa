@@ -1,4 +1,4 @@
-import { dateHeureFormatage } from "./outils.js";
+import { tempsDataBaseEnFR } from "./outils.js";
 
 // Classe "FormateurCommode" pour formater l'affichage de la commode
 export class FormateurCommode {
@@ -21,6 +21,7 @@ export class FormateurCommode {
   </div> <!-- tile is-horizontal -->
   <div class="tile is-horizontal is-parent">
 `; }
+
 		html += `
     <div class="tile is-child block avecMarge">
       <div class="message is-info">
@@ -33,10 +34,10 @@ export class FormateurCommode {
           <strong>Description</strong>: ${element.description}<br/>
           <strong>Création</strong> le <time datetime="${
                     element.created_at
-                  }">${dateHeureFormatage.format(new Date(element.created_at))}</time><br/>
+                  }">${tempsDataBaseEnFR(element.created_at)}</time><br/>
           <strong>Mise à jour</strong> le <time datetime="${
                     element.updated_at
-                  }">${dateHeureFormatage.format(new Date(element.updated_at))}</time><br/>
+                  }">${tempsDataBaseEnFR(element.updated_at)}</time><br/>
         </div>
       </div>
     </div>

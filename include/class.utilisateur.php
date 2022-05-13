@@ -62,12 +62,18 @@ class Utilisateurs extends table
 		return ($this->isPresent("Email",$email));
 	}
 
-	function estValide($pseudo, $mdp)
+	function estValide($pseudo, $mdp, $enClair)
 	{
 		$utilisateurValide = FALSE;
 		if ($this->isPresent("Nom",$pseudo)) {
 			if ( $this->selectByReference("Nom",$pseudo) ) {
-				$utilisateurValide = password_verify($mdp, $this->data["Pass"]);
+				$motDePasse = "";
+				if (!empty($enClair)) {
+					$motDePasse = hash("sha256", $mdp);
+				} else {
+					$motDePasse = $mdp;
+				}
+				$utilisateurValide = password_verify($motDePasse, $this->data["Pass"]);
 			}
 		}
 		return $utilisateurValide;
@@ -129,7 +135,7 @@ class Utilisateurs extends table
 		return $message;
 	}
 
-	function creerUtilisateur($pseudo, $email, $motDePasse, $config)
+	function creerUtilisateur($pseudo, $email, $motDePasse, $config, $enClair)
 	{
 		$message = "";
 		if ($this->pseudoDejaDefini($pseudo)) {
@@ -142,6 +148,9 @@ class Utilisateurs extends table
 				$lUtilisateur = array();
 				$lUtilisateur['Nom'] = $pseudo;
 				$lUtilisateur['Email'] = $email;
+				if (!empty($enClair)) {
+					$motDePasse = hash("sha256", $motDePasse);
+				}
 				// Encoder le mot de passe
 				$lUtilisateur['Pass'] = password_hash($motDePasse, PASSWORD_DEFAULT);
 				$lUtilisateur['Cle'] = md5(uniqid(rand(), true));

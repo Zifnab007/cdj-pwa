@@ -1,4 +1,4 @@
-import { dateHeureFormatage, elementFormatage } from "./outils.js";
+import { tempsDataBaseEnFR, elementFormatage } from "./outils.js";
 
 // Classe "FormateurPetitTiroir" pour formater l'affichage d'un petit tiroir
 export class FormateurPetitTiroir {
@@ -57,10 +57,10 @@ export class FormateurPetitTiroir {
           <br/>
           <strong>Création</strong> le <time datetime="${
                     element.created_at
-                  }">${dateHeureFormatage.format(new Date(element.created_at))}</time>
+                  }">${tempsDataBaseEnFR(element.created_at)}</time>
           <strong>Mise à jour</strong> le <time datetime="${
                     element.updated_at
-                  }">${dateHeureFormatage.format(new Date(element.updated_at))}</time><br/>
+                  }">${tempsDataBaseEnFR(element.updated_at)}</time><br/>
         </div>
       </div>
 `;
