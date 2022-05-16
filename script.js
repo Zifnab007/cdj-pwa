@@ -1078,10 +1078,6 @@ function demanderEnregistrement() {
 	jsonCmd["nom"] = document.getElementById("elemNom").value;
 	if ("1" == avecPhoto.get()) {
 		if (document.getElementById("photo").files[0]) {
-			if (1048576 < document.getElementById("photo").files[0].size) {
-				genererPageErreur("ERREUR DE TAILLE", "Le fichier séléctionné est trop gros. Il doit être inférieur à 1Mo");
-				return false;
-			}
 			url.ajouter("photo", document.getElementById("photo").files[0]);
 		} else {
 			document.getElementsByName("supprimerPhoto").forEach(element => {

@@ -10,6 +10,7 @@
 	include_once($PATH_INCLUDE."configuration.php");
 	include_once($PATH_INCLUDE."verificateur.php");
 
+
 	function supprimerUnePhoto($tiroirs, $utilisateurs, $idTiroir, $idObjet) {
 		if (!empty($idObjet)) {
 			$photo = $tiroirs->photoDUnObjet($utilisateurs->id, $idTiroir, $idObjet);
@@ -17,6 +18,80 @@
 			 	unlink("$utilisateurs->repertoire$photo");
 			}
 		}
+	}
+	function sauvegarderPhoto ($fichier, $type, $fichierCible) {
+		$pasDErreur = false;
+		$imageSrc = "";
+		switch($type) {
+			case 'image/gif':
+				$imageSrc = imagecreatefromgif( $fichier );
+				$pasDErreur = true;
+				break;
+			case 'image/jpeg':
+				$imageSrc = imagecreatefromjpeg( $fichier );
+				$pasDErreur = true;
+				break;
+			case 'image/png':
+				$imageSrc = imagecreatefrompng( $fichier );
+				$pasDErreur = true;
+				break;
+			case 'image/webp':
+				$imageSrc = imagecreatefromwebp( $fichier );
+				$pasDErreur = true;
+				break;
+			default:
+				$pasDErreur = false;
+		}
+		if ($pasDErreur) {
+			$imageSrcLargeur = imagesx($imageSrc);
+			$imageSrcHauteur = imagesy($imageSrc);
+			$imageSrcPosX = 0;
+			$imageSrcPosY = 0;
+			if (($imageSrcLargeur < IMAGE_TAILLE_MAX) || ($imageSrcHauteur < IMAGE_TAILLE_MAX)) {
+				if (!move_uploaded_file($fichier, $fichierCible)) {
+					$pasDErreur = false;
+				}
+			} else {
+				$imageDest = imagecreatetruecolor(IMAGE_TAILLE_MAX, IMAGE_TAILLE_MAX);
+				if ($imageSrcLargeur > $imageSrcHauteur) {
+					$imageSrcPosX = ($imageSrcLargeur - $imageSrcHauteur)/2;
+					$imageSrcLargeur = $imageSrcHauteur;
+				} else {
+					$imageSrcPosY = ($imageSrcHauteur - $imageSrcLargeur)/2;
+					$imageSrcHauteur = $imageSrcLargeur;
+				}
+				$pasDErreur = imagecopyresampled(
+					$imageDest,
+					$imageSrc,
+					0,
+					0,
+					$imageSrcPosX,
+					$imageSrcPosY,
+					IMAGE_TAILLE_MAX,
+					IMAGE_TAILLE_MAX,
+					$imageSrcLargeur,
+					$imageSrcHauteur);
+				if ($pasDErreur) {
+					switch($type) {
+						case 'image/gif':
+							$pasDErreur = imagegif($imageDest, $fichierCible);
+							break;
+						case 'image/jpeg':
+							$pasDErreur = imagejpeg($imageDest, $fichierCible);
+							break;
+						case 'image/png':
+							$pasDErreur = imagepng($imageDest, $fichierCible);
+							break;
+						case 'image/webp':
+							$pasDErreur = imagewebp($imageDest, $fichierCible);
+							break;
+						default:
+							$pasDErreur = false;
+					}
+				}
+			}
+		}
+		return $pasDErreur;
 	}
 	$utilisateur = isset ($_POST['pseudo']) ? $_POST['pseudo'] : "" ;
 	$cle = isset ($_POST['cle']) ? $_POST['cle'] : "" ;
@@ -30,6 +105,7 @@
 	$laStructure = "";
 	$lesObjets = [];
        	$message = pseudoEstValide($utilisateur);
+	$DB_utilisateurs = "";
 
 	// Vérifier l'utilisateur
 	if (empty($message)) {
@@ -98,21 +174,20 @@
 			if (isset ($_FILES['photo'])) {
 				$nomImage = md5(uniqid(rand(), true));
 				$objetDansTable["Photo"] = $nomImage;
-				if (1048576 < $_FILES['photo']['size']) {
-					$message = "La taille du fichier est trop grande";
-				} else {
-					if (	('image/jpeg' == $_FILES['photo']['type']) ||
-						('image/webp' == $_FILES['photo']['type']) ||
-						('image/gif' == $_FILES['photo']['type'])) {
-						if (move_uploaded_file($_FILES['photo']['tmp_name'], "$DB_utilisateurs->repertoire$nomImage")) {
-							// Si c'est une nouvelle photo il faut supprimer l'ancienne
-							supprimerUnePhoto($lesTiroirs, $DB_utilisateurs, $tiroir, $idObjet);
-						} else {
-							$message = "Erreur sur le serveur lors de la copie du fichier";
-						}
+				if (	('image/gif' == $_FILES['photo']['type']) ||
+					('image/jpeg' == $_FILES['photo']['type']) ||
+					('image/png' == $_FILES['photo']['type']) ||
+					('image/webp' == $_FILES['photo']['type'])) {
+					if (sauvegarderPhoto($_FILES['photo']['tmp_name'],
+							     $_FILES['photo']['type'],
+							     $DB_utilisateurs->repertoire.$nomImage)) {
+						// Si c'est une nouvelle photo il faut supprimer l'ancienne
+						supprimerUnePhoto($lesTiroirs, $DB_utilisateurs, $tiroir, $idObjet);
 					} else {
-						$message = "Il faut selectionner une image JPEG, GIF ou WEBP (pas ".$_FILES['photo']['type'].").";
+						$message = "Erreur sur le serveur lors de la copie du fichier";
 					}
+				} else {
+					$message = "Il faut selectionner une image GIF, JPEG, PNG ou WEBP (pas ".$_FILES['photo']['type'].").";
 				}
 			} else if ($supprimerPhoto) {
 				$objetDansTable["Photo"] = null;
