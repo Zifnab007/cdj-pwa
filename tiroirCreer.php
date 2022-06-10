@@ -52,7 +52,7 @@
 			}
 		}
 		// Créer la nouvelle table
-		$message = $DB_utilisateurs->creerTable($nomDuTiroir, $lesChamps, $avecPhoto);
+		$message = $DB_utilisateurs->creerTable($nomDuTiroir, '', $lesChamps, $avecPhoto);
 		if (empty($message)) {
 			$identifiant = $DB_utilisateurs->derniereTable;
 		}

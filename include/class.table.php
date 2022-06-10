@@ -412,17 +412,31 @@ class table
   {
 	  $sql = " CREATE TABLE `".$this->maTable."` ( `id` INT NOT NULL AUTO_INCREMENT ";
 	  foreach ($fields as $value) {
-		  if ("DATETIME" == $value["type"]) {
-			  $type = "datetime DEFAULT NULL";
-		  } else if ("DATE" == $value["type"]) {
-			  $type = "date DEFAULT NULL";
-		  } else if ("ENTIER" == $value["type"]) {
-			  $type = "int(11) DEFAULT NULL";
-		  } else if ("TEXTE" == $value["type"]) {
-			  $type = "text CHARACTER SET utf8 COLLATE utf8_unicode_ci DEFAULT NULL";
-		  } else if ("BOOLEEN" == $value["type"]) {
+		  switch ($value["type"]) {
+		  	case "BOOLEEN":
 			  $type = "tinyint(1) DEFAULT 0";
-		  } else {
+			  break;
+		  	case "CODE_POSTAL":
+			  $type = "varchar(5) DEFAULT NULL";
+			  break;
+		  	case "DATETIME":
+			  $type = "datetime DEFAULT NULL";
+			  break;
+		  	case "DATE":
+			  $type = "date DEFAULT NULL";
+			  break;
+		  	case "ENTIER":
+			  $type = "int(11) DEFAULT NULL";
+			  break;
+		  	case "FLOTTANT":
+			case "LAT":
+			case "LONG":
+			  $type = "FLOAT DEFAULT NULL";
+			  break;
+		  	case "TEXTE":
+			  $type = "text CHARACTER SET utf8 COLLATE utf8_unicode_ci DEFAULT NULL";
+			  break;
+		  	default:
 			  $type = "tinyint(1) DEFAULT 0";
 		  }
 		$sql = $sql.", `".$value["nom"]."` ".$type." ";

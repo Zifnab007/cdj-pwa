@@ -36,11 +36,15 @@ function emailEstValide($email) {
 }
 
 function typeDeChampEstValide($valeur) {
-	if (("DATETIME" == $valeur) ||
+	if (("BOOLEEN" == $valeur) ||
+	    ("CODE_POSTAL" == $valeur) ||
+	    ("DATETIME" == $valeur) ||
 	    ("DATE" == $valeur) ||
 	    ("ENTIER" == $valeur) ||
-       	    ("TEXTE" == $valeur) ||
-       	    ("BOOLEEN" == $valeur)) {
+	    ("FLOTTANT" == $valeur) ||
+	    ("LAT" == $valeur) ||
+	    ("LONG" == $valeur) ||
+       	    ("TEXTE" == $valeur)) {
 		return true;
 	} else {
 		return false;
@@ -52,11 +56,11 @@ function typeDeChampEstValide($valeur) {
 function champEstValide($valeur, $type, $nom) {
 	$message = "";
 
-	if ("ENTIER" == $type) {
-		if (1 === preg_match("/^[0-9]{0,10}$/", $valeur)) {
+	if ("CODE_POSTAL" == $type) {
+		if (empty($valeur) || (1 === preg_match("/^[0-9]{5,5}$/", $valeur))) {
 			$message = "";
 		} else {
-			$message = "Le champ ENTIER \"".$nom."\" n'est pas valide. ";
+			$message = "Le champ CODE_POSTAL \"".$nom."\" n'est pas valide. ";
 		}
 	}
 
@@ -90,6 +94,39 @@ function champEstValide($valeur, $type, $nom) {
 			$message = "Dans le champ DATE \"".$nom."\", la date ".$valeur."  n'est pas syntaxiquement correcte.<br/>";
 		}
 	}
+
+	if ("ENTIER" == $type) {
+		if (1 === preg_match("/^[0-9]{0,10}$/", $valeur)) {
+			$message = "";
+		} else {
+			$message = "Le champ ENTIER \"".$nom."\" n'est pas valide. ";
+		}
+	}
+
+	if ("FLOTTANT" == $type) {
+		if (1 === preg_match("/^[0-9]{0,10}\,[0-9]{0,10}$/", $valeur)) {
+			$message = "";
+		} else {
+			$message = "Le champ FLOTTANT \"".$nom."\" n'est pas valide. ";
+		}
+	}
+
+	if ("LAT" == $type) {
+		if (empty($valeur) || (1 === preg_match("/^\-{0,1}(([1-8]{0,1}[0-9]{1})\,[0-9]{1,10}|90,0)$/", $valeur))) {
+			$message = "";
+		} else {
+			$message = "Le champ LAT \"".$nom."\" n'est pas valide. ";
+		}
+	}
+
+	if ("LONG" == $type) {
+		if (empty($valeur) || (1 === preg_match("/^\-{0,1}(((1{1}[0-7]{0,1}|[1-8]{0,1})[0-9]{1})\,[0-9]{1,10}|180,0)$/", $valeur))) {
+			$message = "";
+		} else {
+			$message = "Le champ LONG \"".$nom."\" n'est pas valide. ";
+		}
+	}
+
         return $message;
 }
 

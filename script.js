@@ -223,6 +223,17 @@ function mettreAJourTiroir(objets, structure) {
 					objets[i].record[unChamp.nom] = dateDataBaseEnFR(valeur);
 				}
 			}
+			if (("FLOTTANT" == unChamp.type) || ("LAT" == unChamp.type) || ("LONG" == unChamp.type)) {
+				let reg = /\./;
+				let valeur = objets[i].record[unChamp.nom];
+				if (null == valeur) {
+					objets[i].record[unChamp.nom] = "";
+				} else if (reg.test(valeur)) {
+					objets[i].record[unChamp.nom] = valeur.replace('\.',',');
+				} else {
+					objets[i].record[unChamp.nom] = valeur+",0";
+				}
+			}
 		});
 	}
 	return objets;
@@ -279,20 +290,6 @@ function validerEntree(element, idAideOK, idAideKO, type) {
 			document.getElementById(idAideOK).className = "help is-success is-hidden";
 		}
 	}
-	if ("ENTIER" == type) {
-		let reg = /^[0-9]{0,10}$/;
-		let valeur = element.value;
-		if ("" == valeur) {
-			document.getElementById(idAideKO).className = "help is-danger is-hidden";
-			document.getElementById(idAideOK).className = "help is-success is-hidden";
-		} else if (reg.test(valeur)) {
-			document.getElementById(idAideKO).className = "help is-danger is-hidden";
-			document.getElementById(idAideOK).className = "help is-success is-flex";
-		} else {
-			document.getElementById(idAideKO).className = "help is-danger is-flex";
-			document.getElementById(idAideOK).className = "help is-success is-hidden";
-		}
-	}
 	if ("DATE" == type) {
 		let reg = /^([012][0-9]|30|31)\/(0[1-9]|10|11|12)\/[1-9][0-9]{3}$/;
 		let valeur = element.value;
@@ -307,7 +304,63 @@ function validerEntree(element, idAideOK, idAideKO, type) {
 			document.getElementById(idAideOK).className = "help is-success is-hidden";
 		}
 	}
-};
+	if ("ENTIER" == type) {
+		let reg = /^[0-9]{0,10}$/;
+		let valeur = element.value;
+		if ("" == valeur) {
+			document.getElementById(idAideKO).className = "help is-danger is-hidden";
+			document.getElementById(idAideOK).className = "help is-success is-hidden";
+		} else if (reg.test(valeur)) {
+			document.getElementById(idAideKO).className = "help is-danger is-hidden";
+			document.getElementById(idAideOK).className = "help is-success is-flex";
+		} else {
+			document.getElementById(idAideKO).className = "help is-danger is-flex";
+			document.getElementById(idAideOK).className = "help is-success is-hidden";
+		}
+	}
+	if ("FLOTTANT" == type) {
+		let reg = /^[0-9]{0,10},[0-9]{0,10}$/;
+		let valeur = element.value;
+		if ("" == valeur) {
+			document.getElementById(idAideKO).className = "help is-danger is-hidden";
+			document.getElementById(idAideOK).className = "help is-success is-hidden";
+		} else if (reg.test(valeur)) {
+			document.getElementById(idAideKO).className = "help is-danger is-hidden";
+			document.getElementById(idAideOK).className = "help is-success is-flex";
+		} else {
+			document.getElementById(idAideKO).className = "help is-danger is-flex";
+			document.getElementById(idAideOK).className = "help is-success is-hidden";
+		}
+	}
+	if ("LAT" == type) {
+		let reg = /^\-{0,1}(([1-8]{0,1}[0-9]{1})\,[0-9]{1,10}|90,0)$/;
+		let valeur = element.value;
+		if ("" == valeur) {
+			document.getElementById(idAideKO).className = "help is-danger is-hidden";
+			document.getElementById(idAideOK).className = "help is-success is-hidden";
+		} else if (reg.test(valeur)) {
+			document.getElementById(idAideKO).className = "help is-danger is-hidden";
+			document.getElementById(idAideOK).className = "help is-success is-flex";
+		} else {
+			document.getElementById(idAideKO).className = "help is-danger is-flex";
+			document.getElementById(idAideOK).className = "help is-success is-hidden";
+		}
+	}
+	if ("LONG" == type) {
+		let reg = /^\-{0,1}(((1{1}[0-7]{0,1}|[1-8]{0,1})[0-9]{1})\,[0-9]{1,10}|180,0)$/;
+		let valeur = element.value;
+		if ("" == valeur) {
+			document.getElementById(idAideKO).className = "help is-danger is-hidden";
+			document.getElementById(idAideOK).className = "help is-success is-hidden";
+		} else if (reg.test(valeur)) {
+			document.getElementById(idAideKO).className = "help is-danger is-hidden";
+			document.getElementById(idAideOK).className = "help is-success is-flex";
+		} else {
+			document.getElementById(idAideKO).className = "help is-danger is-flex";
+			document.getElementById(idAideOK).className = "help is-success is-hidden";
+		}
+	}
+}
 
 function mettreAaujourdHui(id) {
 	document.getElementById(id).value = aujourdHui();
@@ -321,9 +374,12 @@ function saisieEnHTML(titre, id, type, fond, valeur, aideOK, aideKO) {
 	if ("password" != type) { typeAffichage = "text"; }
 	if (null == fond) {
 		fond = "";
-		if ("BOOLEEN" == type) { fond = "Entrer TRUE ou FALSE"; }
-		if ("DATE" == type) { fond = "Entrer une date JJ/MM/AAAA"; }
+		if ("BOOLEEN" == type) { fond = 'Entrer "TRUE" ou "FALSE"'; }
+		if ("DATE" == type) { fond = 'Entrer une date "JJ/MM/AAAA"'; }
 		if ("ENTIER" == type) { fond = "Entrer un nombre"; }
+		if ("FLOTTANT" == type) { fond = 'Entrer un flottant "nnnn.nnnnn"'; }
+		if ("LAT" == type) { fond = 'Entrer une latitude entre -90,0 et 90,0'; }
+		if ("LONG" == type) { fond = 'Entrer une longitude entre -180,0 et 180,0'; }
 		if ("TEXTE" == type) { fond = "Entrer le texte"; }
 	}
 	tracer('saisieEnHTML ' + titre +" "+ type +" "+ typeAffichage +" OK "+ aideOK +" KO "+ aideKO);
@@ -341,14 +397,6 @@ function saisieEnHTML(titre, id, type, fond, valeur, aideOK, aideKO) {
           <div class="control">
             <input class="input" type="${typeAffichage}" placeholder="${fond}" id="${id}" value="${valeur}">`;
 
-	if ("ENTIER" == type) {
-		if ("" == aideKO) { aideKO = "Ce nombre est invalide. Il doit comporter uniquement un maximum de 10 chiffres [0-9]."; }
-		if ("" == aideOK) { aideOK = "Ce nombre est valide."; }
-	}
-	if ("DATE" == type) {
-		if ("" == aideKO) { aideKO = "Cette date est invalide. Elle doit être de la forme JJ/MM/AAAA entre 01/01/1000 et 31/12/9999."; }
-		if ("" == aideOK) { aideOK = "Cette date est valide."; }
-	}
 	if ("password" == type) {
 		if ("" == aideKO) { aideKO = "Le mot de passe doit avoir entre 6 et 32 caractères."; }
 		if ("" == aideOK) { aideOK = "Ce mot de passe est valide."; }
@@ -360,6 +408,26 @@ function saisieEnHTML(titre, id, type, fond, valeur, aideOK, aideKO) {
 	if ("pseudo" == type) {
 		if ("" == aideKO) { aideKO = "Le pseudo doit avoir entre 4 et 32 '-', ' ', chiffre ou lettre sans accent."; }
 		if ("" == aideOK) { aideOK = "Ce pseudo est valide."; }
+	}
+	if ("DATE" == type) {
+		if ("" == aideKO) { aideKO = "Cette date est invalide. Elle doit être de la forme JJ/MM/AAAA entre 01/01/1000 et 31/12/9999."; }
+		if ("" == aideOK) { aideOK = "Cette date est valide."; }
+	}
+	if ("ENTIER" == type) {
+		if ("" == aideKO) { aideKO = "Ce nombre est invalide. Il doit comporter uniquement un maximum de 10 chiffres [0-9]."; }
+		if ("" == aideOK) { aideOK = "Ce nombre est valide."; }
+	}
+	if ("FLOTTANT" == type) {
+		if ("" == aideKO) { aideKO = "Ce flottant est invalide. Il doit comporter uniquement un maximum de chiffres séparés par un virguke [0-9],[0-9]."; }
+		if ("" == aideOK) { aideOK = "Ce flottant est valide."; }
+	}
+	if ("LAT" == type) {
+		if ("" == aideKO) { aideKO = "Cette latitude est invalide. Elle doit être entre -90,à et 90,0"; }
+		if ("" == aideOK) { aideOK = "Cette latitude est valide."; }
+	}
+	if ("LONG" == type) {
+		if ("" == aideKO) { aideKO = "Cette longitude est invalide. Elle doit être entre -180,à et 180,0"; }
+		if ("" == aideOK) { aideOK = "Cette longitude est valide."; }
 	}
 	if (null != aideKO) {
 		html += `
@@ -885,7 +953,7 @@ function genererPageImporterTiroir() {
             </table>
             (*) Le premier champ doit être le nom et il est de type TEXTE.
             <br/>
-            Le type des champs libres sont: "BOOLEEN", "DATE", "DATETIME", "ENTIER" et "TEXTE".
+            Le type des champs libres sont: "BOOLEEN", "DATE", "DATETIME", "ENTIER", "FLOTTANT", "LAT", "LONG" et "TEXTE".
             <br/>
             <br/>
 
@@ -961,7 +1029,7 @@ function genererPageNouveauTiroir(){
 	html += `
 	    <hr/>`;
 
-	html += chapitreEnHTML("", "Il y a déjà par défaut les champs identification (id), nom (Non), date de création (creation) et de modifixation (MiseAJour).");
+	html += chapitreEnHTML("", "Il y a déjà par défaut les champs nom, date de création et date de modification.");
 	html += `
 	    <hr/>`;
 
@@ -987,7 +1055,7 @@ function genererPageNouveauTiroir(){
 
 	for (var i=0;i<4;i++) {
 		html += saisieEnHTML("Nom du champ", "nom"+i, "text", "Nom du champ", lesPages.lireElement("CRT", "nom"+i), null, null);
-		html += choixEnHTML("Type du champ", "type"+i, ["DATE", "ENTIER", "TEXTE", "BOOLEEN"], lesPages.lireElement("CRT", "type"+i), "");
+		html += choixEnHTML("Type du champ", "type"+i, ["BOOLEEN", "DATE", "ENTIER", "FLOTTANT", "LONG", "LAT", "TEXTE"], lesPages.lireElement("CRT", "type"+i), "");
 	}
 
 	html += `

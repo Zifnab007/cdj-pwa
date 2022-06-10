@@ -114,7 +114,7 @@ class Tiroir
                 return $message;
 	}
 
-        function creerTiroir($idUtilisateur, $nomDuTiroir, $lesChamps, $avecPhoto)
+        function creerTiroir($idUtilisateur, $nomDuTiroir, $decription, $lesChamps, $avecPhoto)
         {
                 $message = "";
                 $lesbases = new table("base");
@@ -126,6 +126,7 @@ class Tiroir
                 $laConfig['structure'] = $lesChamps;
                 $laConfig['photo'] = $avecPhoto;
                 $laTable['Configuration'] = json_encode($laConfig, JSON_INVALID_UTF8_SUBSTITUTE|JSON_PRESERVE_ZERO_FRACTION|JSON_UNESCAPED_LINE_TERMINATORS|JSON_UNESCAPED_SLASHES|JSON_UNESCAPED_UNICODE);
+                $laTable['Description'] = $decription;
                 if ($lesbases->insert($laTable)) {
                         $champ = [];
                         $this->id = mysqli_insert_id($lesbases->database->link);

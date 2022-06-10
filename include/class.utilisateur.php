@@ -126,7 +126,7 @@ class Utilisateurs extends table
 			$message = $this->validerConfig($config);
 			if ("" == $message) {
 				$lUtilisateur = array();
-				$lUtilisateur['Config'] = json_encode($Config);
+				$lUtilisateur['Config'] = json_encode($config);
 				$this->update("Nom",$pseudo,$lUtilisateur);
 			}
 		} else {
@@ -158,13 +158,28 @@ class Utilisateurs extends table
 				$lUtilisateur['Config'] = json_encode($config);
 				if ($this->insert($lUtilisateur)) {
 					if ($this->selectByReference("Nom", $pseudo)) {
+						// Verifier la creation et mettre a jour les attributs
 						$this->id = $this->data["id"];
 						$this->repertoire = "images/u".$this->id."/";
 						$this->pseudo = $pseudo;
 						$this->config = json_decode($this->data["Config"]);
+						// Creer le repertoire pour stoker les photos
 						if (!is_dir($this->repertoire)) {
 							mkdir($this->repertoire);
 						}
+						// Creer la base de donnée des commerces
+						$lesChamps = [];
+						$lesChamps[] = array( "nom" => 'Code postal', "type" => 'CODE_POSTAL');
+						$lesChamps[] = array( "nom" => 'Lat', "type" => 'LAT');
+						$lesChamps[] = array( "nom" => 'Long', "type" => 'LONG');
+						$lesChamps[] = array( "nom" => 'Commentaire', "type" => 'TEXTE');
+						$message = $this->creerTable('Commerces', 'Liste des commerces qui peuvent être référencés par les objets des tiroirs', $lesChamps, 1);
+						if (empty($message)) {
+							$config['commerce'] = $this->derniereTable;
+							$this->mettreAJourConfig($pseudo, $config);
+						} else {
+							$message = "Erreur interne à la création des commerces.";
+						};
 					} else {
 						$message = "Erreur interne à la lecture de la database.";
 					};
@@ -183,14 +198,23 @@ class Utilisateurs extends table
 			$this->id = $this->data["id"];
 			$this->repertoire = "images/u".$this->id."/";
 			$this->pseudo = $pseudo;
-			$this->config = json_decode($this->data["Config"]);
+			$this->config = json_decode($this->data["Config"], true);
 			$lesbases = new table("base");
 			if ($lesbases->selectByReference("Ecrivain", $this->data["id"])) {
-				$this->bases[] = $lesbases->data;
 				$index = 1;
-				while (($index < TABLE_MAX) && $lesbases->selectNext()) {
+				$commerceBase = [];
+				$prochaineBase = true;
+				while (($index < TABLE_MAX) && $prochaineBase) {
 					$index++;
-					$this->bases[] = $lesbases->data;
+					if (array_key_exists("commerce",$this->config) && ($this->config["commerce"] == $lesbases->data["id"])) {
+						$commerceBase = $lesbases->data;
+					} else {
+						$this->bases[] = $lesbases->data;
+					}
+					$prochaineBase = $lesbases->selectNext();
+				}
+				if (!empty($commerceBase)) {
+					$this->bases[] = $commerceBase;
 				}
 			} else {
 				$this->bases = [];
@@ -201,14 +225,14 @@ class Utilisateurs extends table
 		return $message;
 	}
 
-	function creerTable($nomDuTiroir, $lesChamps, $avecPhoto)
+	function creerTable($nomDuTiroir, $description, $lesChamps, $avecPhoto)
 	{
 		$message = "";
 		if (empty($this->id) || empty($this->pseudo)) {
 			$message = "L'utilisateur n'est pas séléctionné";
 		} else {
 			$tiroir = new Tiroir();
-			$message = $tiroir->creerTiroir($this->id, $nomDuTiroir, $lesChamps, $avecPhoto);
+			$message = $tiroir->creerTiroir($this->id, $nomDuTiroir, $description, $lesChamps, $avecPhoto);
 			if (empty($message)) {
 				$this->derniereTable = $tiroir->id;
 			}

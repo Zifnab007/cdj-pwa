@@ -162,10 +162,17 @@
 				$i = 0;
 				foreach ($laStructure as $champ){
 					$messageValidation = champEstValide($lObjet[$champ->nom], $champ->type, $champ->nom);
-					if ("DATE" == $champ->type) {
-						$objetDansTable["ch".$i] = convertirDate($lObjet[$champ->nom]);
-					} else {
-						$objetDansTable["ch".$i] = $lObjet[$champ->nom];
+					switch($champ->type) {
+						case "DATE";
+							$objetDansTable["ch".$i] = convertirDate($lObjet[$champ->nom]);
+							break;
+						case "FLOTTANT":
+						case "LAT":
+						case "LONG":
+							$objetDansTable["ch".$i] = str_replace(',', '.', $lObjet[$champ->nom]);
+							break;
+						default:
+							$objetDansTable["ch".$i] = $lObjet[$champ->nom];
 					}
 					$message = $message.$messageValidation;
 					$i++;
