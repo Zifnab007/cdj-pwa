@@ -172,7 +172,7 @@ class Utilisateurs extends table
 						$lesChamps[] = array( "nom" => 'Code postal', "type" => 'CODE_POSTAL');
 						$lesChamps[] = array( "nom" => 'Lat', "type" => 'LAT');
 						$lesChamps[] = array( "nom" => 'Long', "type" => 'LONG');
-						$lesChamps[] = array( "nom" => 'Commentaire', "type" => 'TEXTE');
+						$lesChamps[] = array( "nom" => 'Commentaire', "type" => 'PARAGRAPHE');
 						$message = $this->creerTable('Commerces', 'Liste des commerces qui peuvent être référencés par les objets des tiroirs', $lesChamps, 1);
 						if (empty($message)) {
 							$config['commerce'] = $this->derniereTable;

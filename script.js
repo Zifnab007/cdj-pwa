@@ -369,9 +369,9 @@ function mettreAaujourdHui(id) {
 function saisieEnHTML(titre, id, type, fond, valeur, aideOK, aideKO) {
 
 	let html = "";
-	let typeAffichage = "password";
+	let typeAffichage = ' type="password"';
+	if ("password" != type) { typeAffichage = ' type="text"'; }
 	if (null == valeur) {valeur = ""};
-	if ("password" != type) { typeAffichage = "text"; }
 	if (null == fond) {
 		fond = "";
 		if ("BOOLEEN" == type) { fond = 'Entrer "TRUE" ou "FALSE"'; }
@@ -380,22 +380,11 @@ function saisieEnHTML(titre, id, type, fond, valeur, aideOK, aideKO) {
 		if ("FLOTTANT" == type) { fond = 'Entrer un flottant "nnnn.nnnnn"'; }
 		if ("LAT" == type) { fond = 'Entrer une latitude entre -90,0 et 90,0'; }
 		if ("LONG" == type) { fond = 'Entrer une longitude entre -180,0 et 180,0'; }
+		if ("PARAGRAPHE" == type) { fond = "Entrer le texte"; }
 		if ("TEXTE" == type) { fond = "Entrer le texte"; }
 	}
 	tracer('saisieEnHTML ' + titre +" "+ type +" "+ typeAffichage +" OK "+ aideOK +" KO "+ aideKO);
 
-	html = `
-        <div class="field">
-          <label class="label">${titre}`;
-	if ("DATE" == type) {
-		let dateAuto = aujourdHui();
-		html += `
-            <a id="${id}Date">(aujourd'hui ${dateAuto})</a>`;
-	}
-	html += `
-	  </label>
-          <div class="control">
-            <input class="input" type="${typeAffichage}" placeholder="${fond}" id="${id}" value="${valeur}">`;
 
 	if ("password" == type) {
 		if ("" == aideKO) { aideKO = "Le mot de passe doit avoir entre 6 et 32 caractères."; }
@@ -429,6 +418,27 @@ function saisieEnHTML(titre, id, type, fond, valeur, aideOK, aideKO) {
 		if ("" == aideKO) { aideKO = "Cette longitude est invalide. Elle doit être entre -180,à et 180,0"; }
 		if ("" == aideOK) { aideOK = "Cette longitude est valide."; }
 	}
+
+	html = `
+        <div class="field">
+          <label class="label">${titre}`;
+	if ("DATE" == type) {
+		let dateAuto = aujourdHui();
+		html += `
+            <a id="${id}Date">(aujourd'hui ${dateAuto})</a>`;
+	}
+
+	html += `
+	  </label>
+          <div class="control">`;
+	if ("PARAGRAPHE" == type) {
+		html += `
+            <textarea class="textarea" ${typeAffichage} placeholder="${fond}" id="${id}">${valeur}</textarea>`;
+	} else {
+		html += `
+            <input class="input" ${typeAffichage} placeholder="${fond}" id="${id}" value="${valeur}">`;
+	}
+
 	if (null != aideKO) {
 		html += `
 	    <p class="help is-danger is-hidden" id="${id}KO">${aideKO}</p>`;
@@ -1055,7 +1065,7 @@ function genererPageNouveauTiroir(){
 
 	for (var i=0;i<4;i++) {
 		html += saisieEnHTML("Nom du champ", "nom"+i, "text", "Nom du champ", lesPages.lireElement("CRT", "nom"+i), null, null);
-		html += choixEnHTML("Type du champ", "type"+i, ["BOOLEEN", "DATE", "ENTIER", "FLOTTANT", "LONG", "LAT", "TEXTE"], lesPages.lireElement("CRT", "type"+i), "");
+		html += choixEnHTML("Type du champ", "type"+i, ["BOOLEEN", "DATE", "ENTIER", "FLOTTANT", "LONG", "LAT", "PARAGRAPHE", "TEXTE"], lesPages.lireElement("CRT", "type"+i), "");
 	}
 
 	html += `
@@ -1215,7 +1225,7 @@ function genererPageObjet(objet){
 		tracerTable(laStructure);
 		laStructure.get().forEach(function (unChamp, index) {
 			if (null == objet.record[unChamp.nom]) {texte = ""} else {texte = objet.record[unChamp.nom]};
-			html += saisieEnHTML(unChamp.nom, "elem"+index, unChamp.type, null, elementFormatage(texte, unChamp.type), "", "");
+			html += saisieEnHTML(unChamp.nom, "elem"+index, unChamp.type, null, texte, "", "");
 		});
 
 		html += `

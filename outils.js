@@ -50,7 +50,7 @@ export function elementFormatage(valeur, type) {
 	if (null == valeur) {
 		texte = "";
 	} else {
-		texte = valeur;
+		texte = valeur.replace(/\n/g,'<br/>');
 	}
 	return texte;
 }
