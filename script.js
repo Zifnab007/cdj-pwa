@@ -369,8 +369,14 @@ function mettreAaujourdHui(id) {
 function saisieEnHTML(titre, id, type, fond, valeur, aideOK, aideKO) {
 
 	let html = "";
-	let typeAffichage = ' type="password"';
-	if ("password" != type) { typeAffichage = ' type="text"'; }
+	let typeAffichage = "";
+	if ("LISTE" == type) {
+		typeAffichage = ' type="text" maxlength="120"';
+	} else if ("password" == type) {
+		typeAffichage = ' type="password"';
+	} else {
+		typeAffichage = ' type="text"';
+	}
 	if (null == valeur) {valeur = ""};
 	if (null == fond) {
 		fond = "";
@@ -379,6 +385,7 @@ function saisieEnHTML(titre, id, type, fond, valeur, aideOK, aideKO) {
 		if ("ENTIER" == type) { fond = "Entrer un nombre"; }
 		if ("FLOTTANT" == type) { fond = 'Entrer un flottant "nnnn.nnnnn"'; }
 		if ("LAT" == type) { fond = 'Entrer une latitude entre -90,0 et 90,0'; }
+		if ("LISTE" == type) { fond = "Entrer le texte, 120 caractères maximum"; }
 		if ("LONG" == type) { fond = 'Entrer une longitude entre -180,0 et 180,0'; }
 		if ("PARAGRAPHE" == type) { fond = "Entrer le texte"; }
 		if ("TEXTE" == type) { fond = "Entrer le texte"; }
@@ -1000,21 +1007,27 @@ function demanderCreationTiroir() {
 	tracer('Clic sur demanderCreationTiroir ' + url.requete());
 	fetch(url.requete(), url.option())
 		.then(
-			response => response.json(),
+			response => response.text(),
 			err => genererPageErreur(err, null))
-		.then(json => requeteValiderCreationTiroir(json) )
+		.then(texte => requeteValiderCreationTiroir(texte) )
 		.catch(err => genererPageFatal(err, "Erreur interne levée lors de la création du tiroir "+document.getElementById("base").value));
 }
 
 // Valider la creation du tiroir
-function requeteValiderCreationTiroir(json) {
-	if (messageEstValide(json)) {
-		tracer('execution de requeteValiderCreationTiroir '+json.table);
-		demanderOuvrirTiroir(json.id);
+function requeteValiderCreationTiroir(texte) {
+	let laReponse = "";
+	try {
+		laReponse = JSON.parse(texte);
+	} catch (e) {
+		genererPageErreur("ERREUR DU SERVEUR", "Erreur: "+e+"<br/>"+texte);
+	}
+	if (messageEstValide(laReponse)) {
+		tracer('execution de requeteValiderCreationTiroir '+laReponse.table);
+		demanderOuvrirTiroir(laReponse.id);
 	} else if (lUtilisateur.estVide()) {
-		genererPageFatal("LA CREATION DU TIROIR EST REFUSEE", json.erreur);
+		genererPageFatal("LA CREATION DU TIROIR EST REFUSEE", laReponse.erreur);
 	} else {
-		genererPageErreur("LA CREATION DU TIROIR EST REFUSEE", json.erreur);
+		genererPageErreur("LA CREATION DU TIROIR EST REFUSEE", laReponse.erreur);
 	}
 }
 
@@ -1065,7 +1078,7 @@ function genererPageNouveauTiroir(){
 
 	for (var i=0;i<4;i++) {
 		html += saisieEnHTML("Nom du champ", "nom"+i, "text", "Nom du champ", lesPages.lireElement("CRT", "nom"+i), null, null);
-		html += choixEnHTML("Type du champ", "type"+i, ["BOOLEEN", "DATE", "ENTIER", "FLOTTANT", "LONG", "LAT", "PARAGRAPHE", "TEXTE"], lesPages.lireElement("CRT", "type"+i), "");
+		html += choixEnHTML("Type du champ", "type"+i, ["BOOLEEN", "DATE", "ENTIER", "FLOTTANT", "LONG", "LAT", "LISTE", "PARAGRAPHE", "TEXTE"], lesPages.lireElement("CRT", "type"+i), "");
 	}
 
 	html += `

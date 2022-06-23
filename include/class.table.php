@@ -433,6 +433,9 @@ class table
 			case "LONG":
 			  $type = "FLOAT DEFAULT NULL";
 			  break;
+		  	case "LISTE":
+			  $type = "varchar(120) DEFAULT NULL";
+			  break;
 		  	case "PARAGRAPHE":
 		  	case "TEXTE":
 			  $type = "text CHARACTER SET utf8 COLLATE utf8_unicode_ci DEFAULT NULL";

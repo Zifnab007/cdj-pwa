@@ -169,6 +169,7 @@ class Utilisateurs extends table
 						}
 						// Creer la base de donnée des commerces
 						$lesChamps = [];
+						$lesChamps[] = array( "nom" => 'Type de commerce', "type" => 'LISTE');
 						$lesChamps[] = array( "nom" => 'Code postal', "type" => 'CODE_POSTAL');
 						$lesChamps[] = array( "nom" => 'Lat', "type" => 'LAT');
 						$lesChamps[] = array( "nom" => 'Long', "type" => 'LONG');

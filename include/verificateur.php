@@ -43,6 +43,7 @@ function typeDeChampEstValide($valeur) {
 	    ("ENTIER" == $valeur) ||
 	    ("FLOTTANT" == $valeur) ||
 	    ("LAT" == $valeur) ||
+	    ("LISTE" == $valeur) ||
 	    ("LONG" == $valeur) ||
        	    ("PARAGRAPHE" == $valeur) ||
        	    ("TEXTE" == $valeur)) {
