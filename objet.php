@@ -5,12 +5,13 @@
 	$PATH_INCLUDE = 'include/';
 	include_once($PATH_INCLUDE."class.utilisateur.php");
 	include_once($PATH_INCLUDE."class.table.php");
-	include_once($PATH_INCLUDE."formaterObjet.php");
-	include_once($PATH_INCLUDE."singleton.database.php");
+	include_once($PATH_INCLUDE."class.tiroir.php");
+	include_once($PATH_INCLUDE."class.commerce.php");
+	include_once($PATH_INCLUDE."formatage.php");
 	include_once($PATH_INCLUDE."configuration.php");
 	include_once($PATH_INCLUDE."verificateur.php");
 
-
+	// Délaration des fonctions
 	function supprimerUnePhoto($tiroirs, $utilisateurs, $idTiroir, $idObjet) {
 		if (!empty($idObjet)) {
 			$photo = $tiroirs->photoDUnObjet($utilisateurs->id, $idTiroir, $idObjet);
@@ -93,6 +94,8 @@
 		}
 		return $pasDErreur;
 	}
+
+	// Délaration des données
 	$utilisateur = isset ($_POST['pseudo']) ? $_POST['pseudo'] : "" ;
 	$cle = isset ($_POST['cle']) ? $_POST['cle'] : "" ;
 	$tiroir = isset ($_POST['tiroir']) ? $_POST['tiroir'] : "" ;
@@ -103,7 +106,9 @@
 	$nomTiroir = "";
 	$config = "";
 	$laStructure = "";
-	$lesObjets = [];
+	$laConfig = "";
+	$objetListe = [];
+	$commerceListe = [];
        	$message = pseudoEstValide($utilisateur);
 	$DB_utilisateurs = "";
 
@@ -130,6 +135,7 @@
 		}
 	}
 
+	// Charger les info de l'utilisateur
 	if (empty($message)) {
 		$DB_utilisateurs->lireUtilisateur($utilisateur);
 		$listeDesTables = $DB_utilisateurs->bases;
@@ -140,45 +146,49 @@
 				$message = "";
 				$nomTiroir = $table["Nom"];
 				$config = $table["Configuration"];
-				$configTable = json_decode($config);
-				$laStructure = $configTable->structure;
+				$laConfig = json_decode($config);
+				$laStructure = $laConfig->structure;
 			}
 		}
 	}
+
+	// Contruire l'objet
 	if (empty($message)) {
 		$lesTiroirs = new Tiroir();
-		if (empty($message)) {
-			$lObjet = [];
-			$objetDansTable = [];
-			$lObjet = json_decode($objetCree, true);
-			$idObjet = $lObjet["id"];
-			$objetDansTable["Nom"] = $lObjet["nom"];
-			if (empty($idObjet)) {
-				$objetDansTable["Creation"] = date('Y-m-d H:i:s');
+		$lObjet = [];
+		$objetDansTable = [];
+		$lObjet = json_decode($objetCree, true);
+		$idObjet = $lObjet["id"];
+		$objetDansTable["Nom"] = $lObjet["nom"];
+		if (empty($idObjet)) {
+			$objetDansTable["Creation"] = date('Y-m-d H:i:s');
+		}
+		$objetDansTable["MiseAJour"] = date('Y-m-d H:i:s');
+		$objetDansTable["supprimer"] = $lObjet["supprimer"];
+		$i = 0;
+		foreach ($laStructure as $champ){
+			$messageValidation = champEstValide($lObjet[$champ->nom], $champ->type, $champ->nom);
+			switch($champ->type) {
+				case "DATE";
+					$objetDansTable["ch".$i] = convertirDate($lObjet[$champ->nom]);
+					break;
+				case "FLOTTANT":
+				case "LAT":
+				case "LONG":
+					$objetDansTable["ch".$i] = str_replace(',', '.', $lObjet[$champ->nom]);
+					break;
+				default:
+					$objetDansTable["ch".$i] = $lObjet[$champ->nom];
 			}
-			$objetDansTable["MiseAJour"] = date('Y-m-d H:i:s');
-			$objetDansTable["supprimer"] = $lObjet["supprimer"];
-			if (empty($message)) {
-				$i = 0;
-				foreach ($laStructure as $champ){
-					$messageValidation = champEstValide($lObjet[$champ->nom], $champ->type, $champ->nom);
-					switch($champ->type) {
-						case "DATE";
-							$objetDansTable["ch".$i] = convertirDate($lObjet[$champ->nom]);
-							break;
-						case "FLOTTANT":
-						case "LAT":
-						case "LONG":
-							$objetDansTable["ch".$i] = str_replace(',', '.', $lObjet[$champ->nom]);
-							break;
-						default:
-							$objetDansTable["ch".$i] = $lObjet[$champ->nom];
-					}
-					$message = $message.$messageValidation;
-					$i++;
-				}
-			}
-			if (isset ($_FILES['photo'])) {
+			$message = $message.$messageValidation;
+			$i++;
+		}
+	}
+
+	// Gérer les photos
+	if (empty($message)) {
+		if (isset($laConfig->photo)) {
+			if ($laConfig->photo && isset ($_FILES['photo'])) {
 				$nomImage = md5(uniqid(rand(), true));
 				$objetDansTable["Photo"] = $nomImage;
 				if (	('image/gif' == $_FILES['photo']['type']) ||
@@ -186,8 +196,8 @@
 					('image/png' == $_FILES['photo']['type']) ||
 					('image/webp' == $_FILES['photo']['type'])) {
 					if (sauvegarderPhoto($_FILES['photo']['tmp_name'],
-							     $_FILES['photo']['type'],
-							     $DB_utilisateurs->repertoire.$nomImage)) {
+					                     $_FILES['photo']['type'],
+					                     $DB_utilisateurs->repertoire.$nomImage)) {
 						// Si c'est une nouvelle photo il faut supprimer l'ancienne
 						supprimerUnePhoto($lesTiroirs, $DB_utilisateurs, $tiroir, $idObjet);
 					} else {
@@ -200,17 +210,44 @@
 				$objetDansTable["Photo"] = null;
 				supprimerUnePhoto($lesTiroirs, $DB_utilisateurs, $tiroir, $idObjet);
 			}
-			if (empty($message)) {
-				$message = $lesTiroirs->creerObjet($DB_utilisateurs->id, $tiroir, $idObjet, $objetDansTable);
+		} else {
+			$message = "Il n'y a pas d'information sur les photo dans la structure du tiroir ".$tiroir." de l'utilsateur ".$DB_utilisateurs->id.".";
+		}
+	}
+
+	// Créer ou modifier l'objet
+	if (empty($message)) {
+		$message = $lesTiroirs->creerObjet($DB_utilisateurs->id, $tiroir, $idObjet, $objetDansTable);
+		$idObjet = $lesTiroirs->dernierObjetId;
+	}
+
+	// Ajouter le commerce
+	if (empty($message)) {
+		if (isset($laConfig->commerce)) {
+			if (($laConfig->commerce) && !empty($lObjet["commerceId"])) {
+				$lesCommerces = new Commerce();
+				$lesCommerces->lierCommerce($DB_utilisateurs->id, $tiroir, $lObjet["commerceId"], $idObjet, $lObjet["commercePrix"], $lObjet["commerceUnit"], $lObjet["commerceDate"]);
 			}
+		} else {
+			$message = "Il n'y a pas d'information sur les commerces dans la structure du tiroir ".$tiroir." de l'utilsateur ".$DB_utilisateurs->id.".";
 		}
-		if (empty($message)) {
-			// Lire le tiroir
-			$message = $lesTiroirs->lireTiroir($DB_utilisateurs->id, $tiroir);
-		}
+	}
+
+	// Lire le tiroir pour le retourner au client
+	if (empty($message)) {
+		$message = $lesTiroirs->lireTiroir($DB_utilisateurs->id, $tiroir);
 		if (empty($message)) {
 			foreach ($lesTiroirs->objets as $objet){
-				$lesObjets[] = formaterObjet ($objet, $laStructure, $DB_utilisateurs->repertoire);
+				$objetListe[] = formaterObjet ($objet, $laStructure, $DB_utilisateurs->repertoire);
+			}
+			if ($laConfig->commerce) {
+				$lesCommerces = new Commerce();
+				$message = $lesCommerces->lireCommerce($DB_utilisateurs->id, $DB_utilisateurs->commerceId);
+				if (empty($message)) {
+					foreach ($lesCommerces->commerces as $commerce){
+						$commerceListe[] = $commerce;
+					}
+				}
 			}
 		}
 	}
@@ -228,7 +265,8 @@
 		"id" => $tiroir,
 		"table" => $nomTiroir,
 		"config" => $config,
-		"data" => $lesObjets);
+		"commerces" => $commerceListe,
+		"data" => $objetListe);
 	echo json_encode($reponse, JSON_INVALID_UTF8_SUBSTITUTE|JSON_PRESERVE_ZERO_FRACTION|JSON_UNESCAPED_LINE_TERMINATORS|JSON_UNESCAPED_SLASHES|JSON_UNESCAPED_UNICODE);
 
 ?>

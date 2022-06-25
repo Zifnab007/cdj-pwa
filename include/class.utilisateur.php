@@ -10,6 +10,7 @@
 */
 include_once($PATH_INCLUDE."class.table.php");
 include_once($PATH_INCLUDE."class.tiroir.php");
+include_once($PATH_INCLUDE."class.commerce.php");
 
 
 // **********************
@@ -25,6 +26,7 @@ class Utilisateurs extends table
 	var $repertoire;
 	var $pseudo;
 	var $config;
+	var $commerceId;
 
   // **********************
   // ATTRIBUTE DECLARATION
@@ -38,6 +40,20 @@ class Utilisateurs extends table
   //  Cle (chaine de caractères)
   //  Actif (boolean)
 
+  // Les functions
+  //  pseudoDejaDefini
+  //  emailDejaDefini
+  //  estValide
+  //  estValide
+  //  estActif
+  //  estConnecte
+  //  validerConfig
+  //  mettreAJourCle
+  //  mettreAJourConfig
+  //  creerUtilisateur
+  //  lireUtilisateur
+  //  creerTable
+
 	// **********************
 	// CONSTRUCTOR METHOD
 	// **********************
@@ -50,6 +66,7 @@ class Utilisateurs extends table
 		$this->repertoire = "/tmp/";
 		$this->pseudo = 0;
 		$this->config = array();
+		$this->commerceId = 0;
 	}
 
 	function pseudoDejaDefini($pseudo)
@@ -114,7 +131,9 @@ class Utilisateurs extends table
 			$laCle = md5(uniqid(rand(), true));
 			$lUtilisateur = array();
 			$lUtilisateur['Cle'] = $laCle;
-			$this->update("Nom",$pseudo,$lUtilisateur);
+			if(!$this->update("Nom",$pseudo,$lUtilisateur)) {
+				$laCle = "";
+			}
 		}
 		return $laCle;
 	}
@@ -127,7 +146,9 @@ class Utilisateurs extends table
 			if ("" == $message) {
 				$lUtilisateur = array();
 				$lUtilisateur['Config'] = json_encode($config);
-				$this->update("Nom",$pseudo,$lUtilisateur);
+				if (!$this->update("Nom",$pseudo,$lUtilisateur)) {
+					$message = "Erreur interne à la mise à jour.";
+				}
 			}
 		} else {
 			$message = "Le pseudo n'existe pas.";
@@ -144,7 +165,9 @@ class Utilisateurs extends table
 			$message = "L'adresse mail ".$cwemailutilisateur." existe déjà";
 		} else {
 			$message = $this->validerConfig($config);
-			if ("" == $message) {
+
+			// Création de l'urilisateur
+			if (empty($message)) {
 				$lUtilisateur = array();
 				$lUtilisateur['Nom'] = $pseudo;
 				$lUtilisateur['Email'] = $email;
@@ -156,37 +179,37 @@ class Utilisateurs extends table
 				$lUtilisateur['Cle'] = md5(uniqid(rand(), true));
 				$lUtilisateur['Actif'] = "0";
 				$lUtilisateur['Config'] = json_encode($config);
-				if ($this->insert($lUtilisateur)) {
-					if ($this->selectByReference("Nom", $pseudo)) {
-						// Verifier la creation et mettre a jour les attributs
-						$this->id = $this->data["id"];
-						$this->repertoire = "images/u".$this->id."/";
-						$this->pseudo = $pseudo;
-						$this->config = json_decode($this->data["Config"]);
-						// Creer le repertoire pour stoker les photos
-						if (!is_dir($this->repertoire)) {
-							mkdir($this->repertoire);
-						}
-						// Creer la base de donnée des commerces
-						$lesChamps = [];
-						$lesChamps[] = array( "nom" => 'Type de commerce', "type" => 'LISTE');
-						$lesChamps[] = array( "nom" => 'Code postal', "type" => 'CODE_POSTAL');
-						$lesChamps[] = array( "nom" => 'Lat', "type" => 'LAT');
-						$lesChamps[] = array( "nom" => 'Long', "type" => 'LONG');
-						$lesChamps[] = array( "nom" => 'Commentaire', "type" => 'PARAGRAPHE');
-						$message = $this->creerTable('Commerces', 'Liste des commerces qui peuvent être référencés par les objets des tiroirs', $lesChamps, 1);
-						if (empty($message)) {
-							$config['commerce'] = $this->derniereTable;
-							$this->mettreAJourConfig($pseudo, $config);
-						} else {
-							$message = "Erreur interne à la création des commerces.";
-						};
-					} else {
-						$message = "Erreur interne à la lecture de la database.";
-					};
-				} else {
+				if (!$this->insert($lUtilisateur)) {
 					$message = "Erreur interne d'insertion dans la database.";
 				}
+			}
+
+			// Creer le repertoire pour stoker les photos et la table de donnée des commerces
+			if (empty($message)) {
+				if ($this->selectByReference("Nom", $pseudo)) {
+					// Verifier la creation et mettre a jour les attributs
+					$this->id = $this->data["id"];
+					$this->repertoire = "images/u".$this->id."/";
+					$this->pseudo = $pseudo;
+					$this->config = json_decode($this->data["Config"]);
+					// Creer le repertoire pour stoker les photos
+					if (!is_dir($this->repertoire)) {
+						mkdir($this->repertoire);
+					}
+					// Creer la table de donnée des commerces
+					$lesCommerces = new Commerce();
+					$message = $lesCommerces->creerLesTablesCommerce($this->id);
+					if (empty($message)) {
+						$config['commerce'] = $lesCommerces->id;
+					}
+				} else {
+					$message = "Erreur interne à la lecture de la database.";
+				};
+			};
+
+			// Mettre à jour la config
+			if (empty($message)) {
+				$this->mettreAJourConfig($pseudo, $config);
 			}
 		}
 		return $message;
@@ -200,6 +223,11 @@ class Utilisateurs extends table
 			$this->repertoire = "images/u".$this->id."/";
 			$this->pseudo = $pseudo;
 			$this->config = json_decode($this->data["Config"], true);
+			if (array_key_exists("commerce",$this->config)) {
+				$this->commerceId = $this->config['commerce'];
+			} else {
+				$this->commerceId = 0;
+			}
 			$lesbases = new table("base");
 			if ($lesbases->selectByReference("Ecrivain", $this->data["id"])) {
 				$index = 1;
@@ -207,7 +235,7 @@ class Utilisateurs extends table
 				$prochaineBase = true;
 				while (($index < TABLE_MAX) && $prochaineBase) {
 					$index++;
-					if (array_key_exists("commerce",$this->config) && ($this->config["commerce"] == $lesbases->data["id"])) {
+					if ((!empty($this->commerceId)) && ($this->commerceId == $lesbases->data["id"])) {
 						$commerceBase = $lesbases->data;
 					} else {
 						$this->bases[] = $lesbases->data;
@@ -226,14 +254,14 @@ class Utilisateurs extends table
 		return $message;
 	}
 
-	function creerTable($nomDuTiroir, $description, $lesChamps, $avecPhoto)
+	function creerTable($nomDuTiroir, $description, $lesChamps, $avecPhoto, $avecCommerce)
 	{
 		$message = "";
 		if (empty($this->id) || empty($this->pseudo)) {
 			$message = "L'utilisateur n'est pas séléctionné";
 		} else {
 			$tiroir = new Tiroir();
-			$message = $tiroir->creerTiroir($this->id, $nomDuTiroir, $description, $lesChamps, $avecPhoto);
+			$message = $tiroir->creerTiroir($this->id, $nomDuTiroir, $description, $lesChamps, $avecPhoto, $avecCommerce);
 			if (empty($message)) {
 				$this->derniereTable = $tiroir->id;
 			}

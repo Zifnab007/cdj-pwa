@@ -19,6 +19,7 @@ class Tiroir
 
         var $objets;
         var $id;
+	var $dernierObjetId;
 
   // **********************
   // ATTRIBUTE DECLARATION
@@ -31,7 +32,9 @@ class Tiroir
         {
                 $this->objets = [];
                 $this->id = 0;
+		$this->dernierObjetId = 0;
         }
+
         function nom($idUtilisateur, $idTiroir) {
                 return "u".$idUtilisateur."_t".$idTiroir;
         }
@@ -80,11 +83,15 @@ class Tiroir
                 $leTiroir = new table($this->nom($idUtilisateur, $idTiroir));
 		if ($leTiroir->exist()) {
 			if (empty($idObjet)) {
-				if (!$leTiroir->insert($objet)) {
+				if ($leTiroir->insert($objet)) {
+                        		$this->dernierObjetId = mysqli_insert_id($leTiroir->database->link);
+				} else {
                 			$message = "Imposible de creer un objet.";
 				}
 			} else if ($leTiroir->isPresent("id", $idObjet)) {
                 		if ($leTiroir->update("id", $idObjet, $objet)) {
+                        		$this->dernierObjetId = $idObjet;
+				} else {
                 			$message = "Imposible de mettre a jour l'objet ".$idObjet.".";
 				}
 			} else {
@@ -104,7 +111,9 @@ class Tiroir
 			if (empty($idObjet)) {
                 		$message = "L'objet ".$idObjet." n'existe pas.";
 			} else {
-				if (!$leTiroir->deleteByReference("id", $idObjet)) {
+				if ($leTiroir->deleteByReference("id", $idObjet)) {
+                        		$this->dernierObjetId = 0;
+				} else {
                 			$message = "Imposible de supprimer un objet.";
 				}
 			}
@@ -114,7 +123,7 @@ class Tiroir
                 return $message;
 	}
 
-        function creerTiroir($idUtilisateur, $nomDuTiroir, $decription, $lesChamps, $avecPhoto)
+        function creerTiroir($idUtilisateur, $nomDuTiroir, $decription, $lesChamps, $avecPhoto, $avecCommerce)
         {
                 $message = "";
                 $lesbases = new table("base");
@@ -125,6 +134,7 @@ class Tiroir
                 $laTable['MiseAJour'] = date('Y-m-d H:i:s');
                 $laConfig['structure'] = $lesChamps;
                 $laConfig['photo'] = $avecPhoto;
+                $laConfig['commerce'] = $avecCommerce;
                 $laTable['Configuration'] = json_encode($laConfig, JSON_INVALID_UTF8_SUBSTITUTE|JSON_PRESERVE_ZERO_FRACTION|JSON_UNESCAPED_LINE_TERMINATORS|JSON_UNESCAPED_SLASHES|JSON_UNESCAPED_UNICODE);
                 $laTable['Description'] = $decription;
                 if ($lesbases->insert($laTable)) {
@@ -141,7 +151,9 @@ class Tiroir
                                 $champs[] = array( "nom" => "ch".$index, "type" => $value["type"]);
                                 $index++;
                         }
-                        if (!$nouvelleTable->create($champs)) {
+                        if ($nouvelleTable->create($champs)) {
+                        	$this->dernierObjetId = 0;
+			} else {
                                 $message = "Erreur de creation de la table";
                         }
                 } else {

@@ -6,7 +6,10 @@
 * GENERATION DATE:  09/11/2007
 * CLASS FILE:       class.table.php
 * -------------------------------------------------------
-*
+*/
+include_once($PATH_INCLUDE."singleton.database.php");
+
+/*
 * **********************
 * Funtion definition
 * **********************
@@ -27,6 +30,7 @@
 * selectWhere
 * selectNext
 * deleteByReference
+* deleteByFields
 * insert
 * update
 *   $refName     : 
@@ -329,6 +333,31 @@ class table
 
   }
 
+  function deleteByFields($fieldsValue)
+  {
+
+      $DataSelector = "";
+      $champValeur = "";
+      foreach ($fieldsValue as $cle => $valeur)
+      {
+	if ("" == $valeur) {
+          $champValeur = "NULL";
+	} else {
+          $champValeur = "'".mysqli_real_escape_string($this->database->link, $valeur)."'";
+        }
+        if ($DataSelector == "")
+        {
+          $DataSelector = "( ".mysqli_real_escape_string($this->database->link, $cle)." = ".$champValeur." )";
+        } else {
+          $DataSelector = $DataSelector." AND ( ".mysqli_real_escape_string($this->database->link, $cle)." = ".$champValeur." )";
+        }
+      }
+      $sql = "DELETE FROM $this->maTable WHERE $DataSelector";
+      $report = $this->database->query($sql);
+      return $report;
+
+  }
+
   // **********************
   // INSERT
   // **********************
@@ -367,7 +396,7 @@ class table
   {
 
     $DataUpdStr = "";
-      $champValeur = "";
+    $champValeur = "";
     foreach ($fieldsValue as $cle => $valeur)
     {
       if ("" == $valeur) {
@@ -384,7 +413,8 @@ class table
     } 
     $LocalFilter = $this->filterEqual($refName, $refValue);
     $sql = " UPDATE $this->maTable SET $DataUpdStr WHERE $LocalFilter;";
-    $this->database->query($sql);
+    $report = $this->database->query($sql);
+    return $report;
 
   }
 

@@ -60,10 +60,12 @@ var laCle = new Enregistreur("cle", stockage);
 var lUtilisateur = new Enregistreur("utilisateur", stockage);
 var leTiroirId = new Enregistreur("tiroirId", stockage);
 var nomDeLaTable = new Enregistreur("tableNom", stockage);
-var lesObjets = new Enregistreur("table", stockage);
+var lesObjets = new Enregistreur("lesObjets", stockage);
+var lesCommerces = new Enregistreur("lesCommerces", stockage);
 var lObjet = new Enregistreur("objet", stockage);
 var laStructure = new Enregistreur("structure", stockage)
-var avecPhoto = new Enregistreur("photo", stockage)
+var photo = new Enregistreur("photo", stockage)
+var commerce = new Enregistreur("commerce", stockage)
 var nomDuSite = "La commode de Julie";
 
 document.addEventListener("DOMContentLoaded", function() {
@@ -151,6 +153,11 @@ function memoriserDonneePage() {
 		document.getElementsByName("questionPhoto").forEach(element => {
 			if (element.checked) {
 				donnee["photo"] = element.value;
+			}
+		});
+		document.getElementsByName("questionCommerce").forEach(element => {
+			if (element.checked) {
+				donnee["commerce"] = element.value;
 			}
 		});
 		for (var i=0;i<4;i++) {
@@ -364,6 +371,32 @@ function validerEntree(element, idAideOK, idAideKO, type) {
 
 function mettreAaujourdHui(id) {
 	document.getElementById(id).value = aujourdHui();
+}
+
+function saisieCommerceEnHTML(lesCommerces) {
+
+	tracer("saisieCommerceEnHTML");
+	let html = `
+          <div class="field">
+            <label class="label">Ajouter un commerce:</label>
+            <div class="control">
+              <div class="select" id="elemComChoix">
+                <select id="elemComSelect">
+                  <option></option>`;
+	
+	lesCommerces.forEach(commerce => {
+		tracer("Commerce "+commerce.id+" "+commerce.nom+" "+commerce.code);
+		html += `
+                  <option value="${commerce.id}">${commerce.nom},${commerce.code}</option>`;
+	});
+
+	html += `
+                </select>
+              </div>
+            </div>
+          </div>
+`;
+	return html;
 }
 
 function saisieEnHTML(titre, id, type, fond, valeur, aideOK, aideKO) {
@@ -727,8 +760,10 @@ function requeteGenererPageCommode(json){
 
 	nomDeLaTable.reset();
 	lesObjets.reset();
+	lesCommerces.reset();
 	laStructure.reset();
-	avecPhoto.reset();
+	photo.reset();
+	commerce.reset();
 	if (messageEstValide(json)) {
 
 		const tiroirs = json.data.map(j => ({
@@ -800,8 +835,10 @@ function requeteGenererPageTiroir(texte){
 		nomDeLaTable.set(leTiroir.table);
 		let config = JSON.parse(leTiroir.config);
 		laStructure.set(config['structure']);
-		avecPhoto.set(config['photo']);
+		photo.set(config['photo']);
+		commerce.set(config['commerce']);
 		lesObjets.set(mettreAJourTiroir(leTiroir.data, laStructure.get()));
+		lesCommerces.set(leTiroir.commerces);
 
 		let html = "";
 		if (0 == leTiroir.data.length) {
@@ -809,9 +846,9 @@ function requeteGenererPageTiroir(texte){
 		} else {
 			let formateur = null;
 			if (leTiroir.data.length > nbMaxAvantAffichageCompact) {
-				formateur = new FormateurGrandTiroir(avecPhoto.get());
+				formateur = new FormateurGrandTiroir(photo.get(), commerce.get());
 			} else {
-				formateur = new FormateurPetitTiroir(avecPhoto.get());
+				formateur = new FormateurPetitTiroir(photo.get(), commerce.get());
 			}
 			html += formateur.commencer(laStructure.get());
 			lesObjets.get().forEach(objet => {
@@ -992,6 +1029,11 @@ function demanderCreationTiroir() {
 	url.ajouter("pseudo", lUtilisateur.get());
 	url.ajouter("cle", laCle.get());
 	url.ajouter("nom", document.getElementById("base").value);
+	document.getElementsByName("questionCommerce").forEach(element => {
+		if (element.checked) {
+			url.ajouter("commerce", element.value);
+		}
+	});
 	document.getElementsByName("questionPhoto").forEach(element => {
 		if (element.checked) {
 			url.ajouter("photo", element.value);
@@ -1058,10 +1100,17 @@ function genererPageNouveauTiroir(){
 
 	let avecPhoto = "";
 	let sansPhoto = "";
+	let avecCommerce = "";
+	let sansCommerce = "";
 	if ("1" == lesPages.lireElement("CRT", "photo")) {
 		avecPhoto = " checked";
 	} else {
 		sansPhoto = " checked";
+	}
+	if ("1" == lesPages.lireElement("CRT", "commerce")) {
+		avecCommerce = " checked";
+	} else {
+		sansCommerce = " checked";
 	}
 	html += `
 	    <div class="field">
@@ -1069,6 +1118,17 @@ function genererPageNouveauTiroir(){
               <div class="control">
                 <label class="radio"> <input type="radio" name="questionPhoto" value="1"${avecPhoto}> Oui </label>
                 <label class="radio"> <input type="radio" name="questionPhoto" value="0"${sansPhoto}> Non </label>
+              </div>
+            </div>`;
+	html += `
+	    <hr/>`;
+
+	html += `
+	    <div class="field">
+	      Voulez vous pouvoir lier les objets à des commerces?
+              <div class="control">
+                <label class="radio"> <input type="radio" name="questionCommerce" value="1"${avecCommerce}> Oui </label>
+                <label class="radio"> <input type="radio" name="questionCommerce" value="0"${sansCommerce}> Non </label>
               </div>
             </div>`;
 	html += `
@@ -1167,7 +1227,7 @@ function demanderEnregistrement() {
 	let jsonRecord = new Object();
 	jsonCmd["id"] = document.getElementById("elemId").value;
 	jsonCmd["nom"] = document.getElementById("elemNom").value;
-	if ("1" == avecPhoto.get()) {
+	if ("1" == photo.get()) {
 		if (document.getElementById("photo").files[0]) {
 			url.ajouter("photo", document.getElementById("photo").files[0]);
 		} else {
@@ -1179,6 +1239,17 @@ function demanderEnregistrement() {
 				}
 			});
 		}
+	}
+	if ("1" == commerce.get()) {
+		let commerceChoisi = document.getElementById('elemComSelect').selectedOptions;
+		if (0 == commerceChoisi.length) {
+			jsonCmd["commerceId"] = "";
+		} else {
+			jsonCmd["commerceId"] = commerceChoisi.item(0).value;
+		}
+		jsonCmd["commercePrix"] = document.getElementById('elemComPrix').value;
+		jsonCmd["commerceUnit"] = document.getElementById('elemComUnit').value;
+		jsonCmd["commerceDate"] = document.getElementById('elemComDate').value;
 	}
 	jsonCmd["supprimer"] = 0;
 	laStructure.get().forEach(function (unChamp, index) {
@@ -1199,13 +1270,18 @@ function demanderEnregistrement() {
 
 function genererPageObjet(objet){
 
-	tracer('appel de la fonction genererPageObjet '+objet.id);
+	tracer('appel de la fonction genererPageObjet id '+objet.id);
 
 		let html = "";
 		let texte = "";
 
 		html += `
           <section class="section is-medium has-background-primary">
+            <div class="field">
+              <div class="control">
+                <button id="demanderEnregistrement" class="button is-link">Enregistrer</button>
+              </div>
+            </div>
             <form class="box">`;
 
 		if (null == objet.id) {texte = ""} else {texte = objet.id};
@@ -1214,7 +1290,23 @@ function genererPageObjet(objet){
 
 		html +=  saisieEnHTML("Nom", "elemNom", "TEXTE", "", objet.nom, null, null);
 
-		if ("1" == avecPhoto.get()) {
+		html += `
+              <hr/>`;
+
+		tracerTable(laStructure);
+		laStructure.get().forEach(function (unChamp, index) {
+			if (null == objet.record[unChamp.nom]) {texte = ""} else {texte = objet.record[unChamp.nom]};
+			html += saisieEnHTML(unChamp.nom, "elem"+index, unChamp.type, null, texte, "", "");
+		});
+
+		if ("1" == commerce.get()) {
+			html += saisieCommerceEnHTML(lesCommerces.get());
+			html += saisieEnHTML("Prix", "elemComPrix", "FLOTTANT", "Des euros", null, "", "");
+			html += choixEnHTML("Unitée", "elemComUnit", ["", "L'unitée", "Kg", "Litre", "Milli-litre", "Mètre", "Mètre carré", "Mètre cube"], null, "");
+			html += saisieEnHTML("Date", "elemComDate", "DATE", "Date d'achat", aujourdHui(), "", "");
+		}
+
+		if ("1" == photo.get()) {
 			html += `
               <div class="field">
                 <div class="control">
@@ -1234,12 +1326,6 @@ function genererPageObjet(objet){
               </div>`;
 			}
 		}
-
-		tracerTable(laStructure);
-		laStructure.get().forEach(function (unChamp, index) {
-			if (null == objet.record[unChamp.nom]) {texte = ""} else {texte = objet.record[unChamp.nom]};
-			html += saisieEnHTML(unChamp.nom, "elem"+index, unChamp.type, null, texte, "", "");
-		});
 
 		html += `
             </form>
@@ -1261,6 +1347,24 @@ function genererPageObjet(objet){
 				document.getElementById("elem"+index+"Date").onclick = function() {mettreAaujourdHui("elem"+index);};
 			}
 		});
+
+//		document.getElementById("elemComBouton").onclick = function afficherChoix () {
+//			document.getElementById('elemComChoix').className = "select is-flex";
+//			tracer("afficherChoix du commerce");
+//		};
+//		commerceId = 0;
+//		document.getElementById("elemComSelect").oninput = function choisir () {
+//			let commerceChoisi = document.getElementById('elemComSelect').selectedOptions;
+//			if (0 == commerceChoisi.length) {
+//				tracer("choisir un commerce: pas de seelction");
+//				commerceId = 0;
+//			} else {
+//				commerceId = commerceChoisi.item(0).value;
+//				document.getElementById('elemCom').value = commerceChoisi.item(0).text;
+//				tracer("choisir un commerce: selection "+commerceId);
+//			}
+//			document.getElementById('elemComChoix').className = "select is-hidden";
+//		};
 		document.getElementById("demanderEnregistrement").onclick = demanderEnregistrement;
 
 		declarerNouvellePage("MOO");

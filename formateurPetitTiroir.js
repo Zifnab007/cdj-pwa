@@ -2,9 +2,10 @@ import { tempsDataBaseEnFR, elementFormatage } from "./outils.js";
 
 // Classe "FormateurPetitTiroir" pour formater l'affichage d'un petit tiroir
 export class FormateurPetitTiroir {
-	constructor (avecPhoto) {
+	constructor (avecPhoto, avecCommerce) {
 		this.structure = "";
 		this.photo = avecPhoto;
+		this.commerce = avecCommerce;
 	}
 
 	elementEnHTML(key, value){

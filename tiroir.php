@@ -5,7 +5,8 @@
 	$PATH_INCLUDE = 'include/';
 	include_once($PATH_INCLUDE."class.utilisateur.php");
 	include_once($PATH_INCLUDE."class.table.php");
-	include_once($PATH_INCLUDE."formaterObjet.php");
+	include_once($PATH_INCLUDE."class.commerce.php");
+	include_once($PATH_INCLUDE."formatage.php");
 	include_once($PATH_INCLUDE."singleton.database.php");
 	include_once($PATH_INCLUDE."configuration.php");
 
@@ -19,7 +20,8 @@
 	$laCle = "";
 	$nomTiroir = "";
 	$config = "";
-	$lesObjets = [];
+	$commerceListe = [];
+	$objetListe = [];
 
 	// Vérifier l'utilisateur
 	$DB_utilisateurs = new Utilisateurs();
@@ -57,7 +59,20 @@
 		if (empty($message)) {
 			$laConfig = json_decode($config);
 			foreach ($lesTiroirs->objets as $objet){
-				$lesObjets[] = formaterObjet ($objet, $laConfig->structure, $DB_utilisateurs->repertoire);
+				$objetListe[] = formaterObjet ($objet, $laConfig->structure, $DB_utilisateurs->repertoire);
+			}
+			if (isset($laConfig->commerce)) {
+				if ($laConfig->commerce) {
+					$lesCommerces = new Commerce();
+					$message = $lesCommerces->lireCommerce($DB_utilisateurs->id, $DB_utilisateurs->commerceId);
+					if (empty($message)) {
+						foreach ($lesCommerces->commerces as $commerce){
+							$commerceListe[] = $commerce;
+						}
+					}
+				}
+			} else {
+				$message = "Il n'y a pas d'information sur les commerces dans la structure du tiroir ".$tiroir." de l'utilsateur ".$DB_utilisateurs->id.".";
 			}
 		}
 	}
@@ -75,7 +90,8 @@
 		"id" => $tiroir,
 		"table" => $nomTiroir,
 		"config" => $config,
-		"data" => $lesObjets);
+		"commerces" => $commerceListe,
+		"data" => $objetListe);
 	echo json_encode($reponse, JSON_INVALID_UTF8_SUBSTITUTE|JSON_PRESERVE_ZERO_FRACTION|JSON_UNESCAPED_LINE_TERMINATORS|JSON_UNESCAPED_SLASHES|JSON_UNESCAPED_UNICODE);
 
 ?>

@@ -4,9 +4,10 @@ import { tempsDataBaseEnFR, elementFormatage } from "./outils.js";
 
 
 export class FormateurGrandTiroir {
-	constructor (avecPhoto) {
+	constructor (avecPhoto, avecCommerce) {
 		this.structure = "";
 		this.photo = ("1" == avecPhoto);
+		this.commerce = ("1" == avecCommerce);
 	}
 
 	elementEnHTML(key, value){

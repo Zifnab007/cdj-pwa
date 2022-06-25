@@ -39,6 +39,9 @@
 
 	if (empty($message)) {
 		$laCle = $DB_utilisateurs->mettreAJourCle($utilisateur);
+		if (empty($laCle)) {
+			$message = "Erreur interne: Impossible d'allouer une clé.";
+		}
 		$DB_utilisateurs->lireUtilisateur($utilisateur);
 //		print_r($DB_utilisateurs->data);
 	}
