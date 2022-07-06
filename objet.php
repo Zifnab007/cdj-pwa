@@ -226,7 +226,7 @@
 		if (isset($laConfig->commerce)) {
 			if (($laConfig->commerce) && !empty($lObjet["commerceId"])) {
 				$lesCommerces = new Commerce();
-				$lesCommerces->lierCommerce($DB_utilisateurs->id, $tiroir, $lObjet["commerceId"], $idObjet, $lObjet["commercePrix"], $lObjet["commerceUnit"], $lObjet["commerceDate"]);
+				$lesCommerces->lierCommerce($DB_utilisateurs->id, $tiroir, $lObjet["commerceId"], $idObjet, $lObjet["commercePrix"], $lObjet["commerceQuan"], $lObjet["commerceUnit"], $lObjet["commerceDate"]);
 			}
 		} else {
 			$message = "Il n'y a pas d'information sur les commerces dans la structure du tiroir ".$tiroir." de l'utilsateur ".$DB_utilisateurs->id.".";
@@ -237,16 +237,27 @@
 	if (empty($message)) {
 		$message = $lesTiroirs->lireTiroir($DB_utilisateurs->id, $tiroir);
 		if (empty($message)) {
-			foreach ($lesTiroirs->objets as $objet){
-				$objetListe[] = formaterObjet ($objet, $laStructure, $DB_utilisateurs->repertoire);
+			if (!isset($laConfig->commerce)) {
+				$message = "Il n'y a pas d'information sur les commerces dans la structure du tiroir ".$tiroir." de l'utilsateur ".$DB_utilisateurs->id.".";
 			}
+		}
+	}
+	if (empty($message)) {
+		if ($laConfig->commerce) {
+			$lesCommerces = new Commerce();
+		}
+		foreach ($lesTiroirs->objets as $objet){
+			$unObjet = formaterObjet ($objet, $laConfig->structure, $DB_utilisateurs->repertoire);
 			if ($laConfig->commerce) {
-				$lesCommerces = new Commerce();
-				$message = $lesCommerces->lireCommerce($DB_utilisateurs->id, $DB_utilisateurs->commerceId);
-				if (empty($message)) {
-					foreach ($lesCommerces->commerces as $commerce){
-						$commerceListe[] = $commerce;
-					}
+				$unObjet['Commerces'] = $lesCommerces->lireCommerceParObjet($DB_utilisateurs->id, $tiroir, $unObjet['id'], $DB_utilisateurs->commerceId);
+			}
+			$objetListe[] = $unObjet;
+		}
+		if ($laConfig->commerce) {
+			$message = $lesCommerces->lireCommerce($DB_utilisateurs->id, $DB_utilisateurs->commerceId);
+			if (empty($message)) {
+				foreach ($lesCommerces->commerces as $commerce){
+					$commerceListe[] = $commerce;
 				}
 			}
 		}

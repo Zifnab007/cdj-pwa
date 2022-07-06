@@ -299,7 +299,7 @@ class table
     $sql =  "SELECT * FROM $this->maTable $this->join WHERE $filter $this->order $this->limit;";
     $Exist = FALSE;
     if ($this->database->query($sql)) {
-	    $Exist = ($this->data = mysqli_free_result($this->database->result));
+	    $Exist = ($this->data = mysqli_fetch_array($this->database->result, $this->mode));
     }
 
     if (! $Exist) { mysqli_free_result($this->database->result); }

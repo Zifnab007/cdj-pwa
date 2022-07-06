@@ -15,13 +15,14 @@
 // ERR Erreur                   (genererPageErreur)
 // FAT Erreur                   (genererPageFatal)
 // INF Information		(genererInformation)
+// CNF Information		(genererConfiguration)
 // generateUI
 import { extention } from "./config.js";
 import { tracer, tracerTable, archiverLesTraces, tracesArchivees } from "./traceur.js";
 import { Enregistreur } from "./enregistreur.js";
 import { RequeteGet } from "./requeteGet.js";
 import { RequetePost } from "./requetePost.js";
-import { aujourdHui, dateDataBaseEnFR, elementFormatage } from "./outils.js";
+import { aujourdHui, dateDataBaseEnFR, elementFormatage, commerceListeFormatage } from "./outils.js";
 import { Pages } from "./pages.js";
 import { FormateurCommode } from "./formateurCommode.js";
 import { FormateurPetitTiroir } from "./formateurPetitTiroir.js";
@@ -861,9 +862,19 @@ function requeteGenererPageTiroir(texte){
 		document.querySelector(".title").innerHTML = nomDuSite+" : "+leTiroir.table;
 
 		lesObjets.get().forEach(objet => {
-			tracer("test modification objet "+objet.id);
+			tracer("onclic Modification objet "+objet.id);
 			document.getElementById("M"+objet.id).onclick = function() {genererPageObjet(objet);};
 			document.getElementById("S"+objet.id).onclick = function() {genererPageSuppressionObjet(objet);};
+			if ("1" == commerce.get()) {
+				let lesPrix = "";
+				for (const [key, value] of Object.entries(objet.Commerces)) {
+					lesPrix = commerceListeFormatage(value);
+				}
+				if ("" != lesPrix) {
+					tracer("onclic prix objet "+objet.id);
+					document.getElementById("P"+objet.id).onclick = function() { genererInformation('Liste des commerces',lesPrix);};
+				}
+			}
 		});
 		declarerNouvellePage("TIR");
 
@@ -1248,6 +1259,7 @@ function demanderEnregistrement() {
 			jsonCmd["commerceId"] = commerceChoisi.item(0).value;
 		}
 		jsonCmd["commercePrix"] = document.getElementById('elemComPrix').value;
+		jsonCmd["commerceQuan"] = document.getElementById('elemComQuan').value;
 		jsonCmd["commerceUnit"] = document.getElementById('elemComUnit').value;
 		jsonCmd["commerceDate"] = document.getElementById('elemComDate').value;
 	}
@@ -1279,7 +1291,7 @@ function genererPageObjet(objet){
           <section class="section is-medium has-background-primary">
             <div class="field">
               <div class="control">
-                <button id="demanderEnregistrement" class="button is-link">Enregistrer</button>
+                <button id="demanderEnregistrement" class="button is-warning">Enregistrer</button>
               </div>
             </div>
             <form class="box">`;
@@ -1302,6 +1314,7 @@ function genererPageObjet(objet){
 		if ("1" == commerce.get()) {
 			html += saisieCommerceEnHTML(lesCommerces.get());
 			html += saisieEnHTML("Prix", "elemComPrix", "FLOTTANT", "Des euros", null, "", "");
+			html += saisieEnHTML("Quantité", "elemComQuan", "ENTIER", "Un entier", null, "", "");
 			html += choixEnHTML("Unitée", "elemComUnit", ["", "L'unitée", "Kg", "Litre", "Milli-litre", "Mètre", "Mètre carré", "Mètre cube"], null, "");
 			html += saisieEnHTML("Date", "elemComDate", "DATE", "Date d'achat", aujourdHui(), "", "");
 		}
@@ -1332,7 +1345,7 @@ function genererPageObjet(objet){
 
               <div class="field">
                 <div class="control">
-                  <button id="demanderEnregistrement" class="button is-link">Enregistrer</button>
+                  <button id="demanderEnregistrementBis" class="button is-warning">Enregistrer</button>
                 </div>
               </div>
 
@@ -1366,6 +1379,7 @@ function genererPageObjet(objet){
 //			document.getElementById('elemComChoix').className = "select is-hidden";
 //		};
 		document.getElementById("demanderEnregistrement").onclick = demanderEnregistrement;
+		document.getElementById("demanderEnregistrementBis").onclick = demanderEnregistrement;
 
 		declarerNouvellePage("MOO");
 
@@ -1415,13 +1429,14 @@ function genererPageErreur(erreur = "ERREUR INDEFINIE", info = "Aucun informatio
 	}
 
 	html += `
-	      <br/>Cliquer sur "Retour" en haut à droite pour revenir sur la page générant l'erreur.<br/>
+	      <br/>Cliquer sur <button id="retourErreur" class="button is-link">Retour</button> ici ou en haut à droite pour revenir sur la page générant l'erreur.<br/>
 
             </div>
 
           </div>`;
 
 	document.querySelector(".corpDePage").innerHTML = html;
+	document.getElementById("retourErreur").onclick = allerPagePrecedante;
 	declarerNouvellePage("ERR");
 	tracer("La page ERREUR (ERR) est chargée");
 }
@@ -1468,12 +1483,12 @@ function genererPageFatal(erreur = "ERREUR FATALE INDEFINIE", info = "Aucun info
 }
 
 // ########################################
-// Génération de la page d'information ("INF")
+// Génération de la page de configuration ("CNF")
 //
 // Generer la page
-async function genererInformation() {
+async function genererConfiguration() {
 
-	tracer('appel de la fonction genererInformation');
+	tracer('appel de la fonction genererConfiguration');
 	memoriserDonneePage();
 
 	let utilisateur = lUtilisateur.get();
@@ -1563,8 +1578,37 @@ async function genererInformation() {
           </div>`;
 
 	document.querySelector(".corpDePage").innerHTML = html;
+	declarerNouvellePage("CNF");
+	tracer("La page ERREUR (CNF) est chargée");
+
+}
+
+// ########################################
+// Génération de la page d'information ("INF")
+//
+// Generer la page
+async function genererInformation(titre = "Info", info = "Aucun information"){
+
+	tracer('appel de la fonction genererInformation');
+
+	let html = `
+          <div class="column">
+
+            <div class="box">`;
+
+	html += chapitreEnHTML(titre+":", info);
+
+	html += `
+	      <br/>Cliquer sur <button id="retourInfo" class="button is-link">Retour</button> ici ou en haut à droite pour revenir sur la page précédante.<br/>
+
+            </div>
+
+          </div>`;
+
+	document.querySelector(".corpDePage").innerHTML = html;
+	document.getElementById("retourInfo").onclick = allerPagePrecedante;
 	declarerNouvellePage("INF");
-	tracer("La page ERREUR (INF) est chargée");
+	tracer("La page INFORMATION (INF) est chargée");
 
 }
 
@@ -1597,15 +1641,18 @@ function generateUI(){
 	} else if ("ERR" == pageCourante()) {
 		// Afficher la page d'erreur fatale
 		genererPageErreur("INCONUE", "Une erreur non enregistrée était levée lors de la dernière utilisation du site");
+	} else if ("INF" == pageCourante()) {
+		// Afficher la page d'onformation mais vide
+		genererPageErreur("Information", "La page vient d'être rechargée et l'information affichée est perdue. Cliquer sur \"Retour\" en haut à droite pour revenir sur la page prédédante.");
 	} else if ("MOO" == pageCourante()) {
 		// Regéné la page de modification d'un objet
 		genererPageObjet(lesPages.lirePage("MOO"));
 	} else if ("IMP" == pageCourante()) {
 		// Afficher la page d'information
 		genererPageImporterTiroir();
-	} else if ("INF" == pageCourante()) {
+	} else if ("CNF" == pageCourante()) {
 		// Afficher la page d'information
-		genererInformation();
+		genererConfiguration();
 	} else if ("FAT" == pageCourante()) {
 		// Afficher la page d'erreur fatale
 		genererPageFatal("INCONUE", "Une erreur fatale non enregistrée était levée lors de la dernière utilisation du site");
@@ -1630,7 +1677,7 @@ function generateUI(){
 	}
 	document.getElementById("quiter").onclick = genererPageConnexion;
 	document.getElementById("retour").onclick = allerPagePrecedante;
-	document.getElementById("config").onclick = genererInformation;
+	document.getElementById("config").onclick = genererConfiguration;
 	document.getElementById("importerTiroir").onclick = genererPageImporterTiroir;
 	document.getElementById("creerTiroir").onclick = genererPageNouveauTiroir;
 	document.getElementById("creerObjet").onclick = function() {genererPageNouvelObjet();};

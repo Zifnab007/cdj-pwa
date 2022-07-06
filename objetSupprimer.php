@@ -21,7 +21,7 @@
 	$config = "";
 	$laConfig = "";
 	$laStructure = "";
-	$lesObjets = [];
+	$objetListe = [];
 	$commerceListe = [];
 	$lesCommerces = null;
        	$message = pseudoEstValide($utilisateur);
@@ -82,25 +82,38 @@
 				$message = "Il n'y a pas d'information sur les commerces dans la structure du tiroir ".$tiroir." de l'utilsateur ".$DB_utilisateurs->id.".";
 			}
 		}
+	}
+
+	// Lire le tiroir pour le retourner au client
+	if (empty($message)) {
+		$message = $lesTiroirs->lireTiroir($DB_utilisateurs->id, $tiroir);
 		if (empty($message)) {
-			// Lire le tiroir
-			$message = $lesTiroirs->lireTiroir($DB_utilisateurs->id, $tiroir);
-		}
-		if (empty($message)) {
-			foreach ($lesTiroirs->objets as $objet){
-				$lesObjets[] = formaterObjet ($objet, $laStructure, $DB_utilisateurs->repertoire);
+			if (!isset($laConfig->commerce)) {
+				$message = "Il n'y a pas d'information sur les commerces dans la structure du tiroir ".$tiroir." de l'utilsateur ".$DB_utilisateurs->id.".";
 			}
+		}
+	}
+	if (empty($message)) {
+		if ($laConfig->commerce) {
+			$lesCommerces = new Commerce();
+		}
+		foreach ($lesTiroirs->objets as $objet){
+			$unObjet = formaterObjet ($objet, $laConfig->structure, $DB_utilisateurs->repertoire);
 			if ($laConfig->commerce) {
-				$message = $lesCommerces->lireCommerce($DB_utilisateurs->id, $DB_utilisateurs->commerceId);
-				if (empty($message)) {
-					foreach ($lesCommerces->commerces as $commerce){
-						$commerceListe[] = $commerce;
-					}
+				$unObjet['Commerces'] = $lesCommerces->lireCommerceParObjet($DB_utilisateurs->id, $tiroir, $unObjet['id'], $DB_utilisateurs->commerceId);
+			}
+			$objetListe[] = $unObjet;
+		}
+		if ($laConfig->commerce) {
+			$message = $lesCommerces->lireCommerce($DB_utilisateurs->id, $DB_utilisateurs->commerceId);
+			if (empty($message)) {
+				foreach ($lesCommerces->commerces as $commerce){
+					$commerceListe[] = $commerce;
 				}
 			}
 		}
 	}
-       
+
 	if (!empty($message)) {
 		$tiroir = 0;
 	}
@@ -115,7 +128,7 @@
 		"table" => $nomTiroir,
 		"config" => $config,
 		"commerces" => $commerceListe,
-		"data" => $lesObjets);
+		"data" => $objetListe);
 	echo json_encode($reponse, JSON_INVALID_UTF8_SUBSTITUTE|JSON_PRESERVE_ZERO_FRACTION|JSON_UNESCAPED_LINE_TERMINATORS|JSON_UNESCAPED_SLASHES|JSON_UNESCAPED_UNICODE);
 
 ?>

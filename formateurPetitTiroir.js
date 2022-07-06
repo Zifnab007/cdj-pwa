@@ -1,4 +1,5 @@
-import { tempsDataBaseEnFR, elementFormatage } from "./outils.js";
+import { tempsDataBaseEnFR, elementFormatage, commerceListeFormatage } from "./outils.js";
+import { tracer } from "./traceur.js";
 
 // Classe "FormateurPetitTiroir" pour formater l'affichage d'un petit tiroir
 export class FormateurPetitTiroir {
@@ -38,10 +39,10 @@ export class FormateurPetitTiroir {
           <label class="input is-hidden">${element.id}</label>
           <div class="field is-grouped">
             <p class="control">
-              <buttom class="button is-warning" id="M${element.id}">Mod.</buttom>
+              <buttom class="button is-link" id="M${element.id}">Mod.</buttom>
             </p>
             <p class="control">
-              <button class="button is-danger" id="S${element.id}">Sup.</buttom>
+              <button class="button is-link" id="S${element.id}">Sup.</buttom>
             </p>
           </div>
         </div>
@@ -52,6 +53,15 @@ export class FormateurPetitTiroir {
 			let texte = elementFormatage(value, this.structure[index].type);
 			html += this.elementEnHTML(key, texte); 
 			index++;
+		}
+
+		if (this.commerce) {
+			tracer("Avec commerces");
+			for (const [key, value] of Object.entries(element.Commerces)) {
+				let texte = commerceListeFormatage(value);
+				html += this.elementEnHTML('Commerce', texte); 
+				tracer("commerces id:"+value.id);
+			}
 		}
 
 		html += `

@@ -20,8 +20,10 @@
 	$laCle = "";
 	$nomTiroir = "";
 	$config = "";
+	$laConfig = "";
 	$commerceListe = [];
 	$objetListe = [];
+	$lesCommerces = null;
 
 	// Vérifier l'utilisateur
 	$DB_utilisateurs = new Utilisateurs();
@@ -49,6 +51,7 @@
 				$message = "";
 				$nomTiroir = $table["Nom"];
 				$config = $table["Configuration"];
+				$laConfig = json_decode($config);
 			}
 		}
 	}
@@ -57,22 +60,28 @@
 		$lesTiroirs = new Tiroir();
 		$message = $lesTiroirs->lireTiroir($DB_utilisateurs->id, $tiroir);
 		if (empty($message)) {
-			$laConfig = json_decode($config);
-			foreach ($lesTiroirs->objets as $objet){
-				$objetListe[] = formaterObjet ($objet, $laConfig->structure, $DB_utilisateurs->repertoire);
-			}
-			if (isset($laConfig->commerce)) {
-				if ($laConfig->commerce) {
-					$lesCommerces = new Commerce();
-					$message = $lesCommerces->lireCommerce($DB_utilisateurs->id, $DB_utilisateurs->commerceId);
-					if (empty($message)) {
-						foreach ($lesCommerces->commerces as $commerce){
-							$commerceListe[] = $commerce;
-						}
-					}
-				}
-			} else {
+			if (!isset($laConfig->commerce)) {
 				$message = "Il n'y a pas d'information sur les commerces dans la structure du tiroir ".$tiroir." de l'utilsateur ".$DB_utilisateurs->id.".";
+			}
+		}
+	}
+	if (empty($message)) {
+		if ($laConfig->commerce) {
+			$lesCommerces = new Commerce();
+		}
+		foreach ($lesTiroirs->objets as $objet){
+			$unObjet = formaterObjet ($objet, $laConfig->structure, $DB_utilisateurs->repertoire);
+			if ($laConfig->commerce) {
+				$unObjet['Commerces'] = $lesCommerces->lireCommerceParObjet($DB_utilisateurs->id, $tiroir, $unObjet['id'], $DB_utilisateurs->commerceId);
+			}
+			$objetListe[] = $unObjet;
+		}
+		if ($laConfig->commerce) {
+			$message = $lesCommerces->lireCommerce($DB_utilisateurs->id, $DB_utilisateurs->commerceId);
+			if (empty($message)) {
+				foreach ($lesCommerces->commerces as $commerce){
+					$commerceListe[] = $commerce;
+				}
 			}
 		}
 	}

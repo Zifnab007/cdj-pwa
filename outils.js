@@ -55,6 +55,32 @@ export function elementFormatage(valeur, type) {
 	return texte;
 }
 
+export function commerceListeFormatage(chezUnCommerce) {
+	let texte = elementFormatage(chezUnCommerce.Nom, "");
+	let elementTxt = elementFormatage(chezUnCommerce.ch1, "");
+	if ("" != elementTxt) {
+		texte = texte+", dans la commune "+elementTxt;
+	}
+	elementTxt = elementFormatage(chezUnCommerce.Prix, "");
+	if ("" != elementTxt) {
+		texte = texte+", prix "+elementTxt+" euro";
+		let uniteeTxt = elementFormatage(chezUnCommerce.Unitee, "");
+		if ("" != uniteeTxt) {
+			texte = texte+" / ";
+			elementTxt = elementFormatage(chezUnCommerce.Quantite, "");
+			if ("" != elementTxt) {
+				texte = texte+elementTxt+" ";
+			}
+			texte = texte+uniteeTxt;
+		}
+	}
+	elementTxt = elementFormatage(chezUnCommerce.Date, "");
+	if ("" != elementTxt) {
+		texte = texte+", le "+elementTxt;
+	}
+	return texte;
+}
+
 export function aujourdHui() {
 	return dateFormatage.format(Date.now());
 }
