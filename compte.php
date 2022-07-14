@@ -15,6 +15,7 @@
 	$enClair = isset ($_GET['enClair']) ? $_GET['enClair'] : "" ;
 	$laCle = "";
 	$message = "";
+	$expediteur = 'contact@zifnab-pwa.go.yo.fr';
 	//
 	// Vérifier la syntaxe des variables
 	$message = $message.pseudoEstValide($utilisateur);
@@ -31,14 +32,19 @@
 			$message = "Le nombre max d'utilisateur est atteint.";
 		} else if ($DB_utilisateurs->pseudoDejaDefini($utilisateur)) {
 			$message = "L'utilisateur ".$utilisateur." existe déjà.";
-		} else if ($DB_utilisateurs->emailDejaDefini($eMail)) {
-			$message = "L'adresse e-mail ".$eMail." est déjà utilisée.";
 		} else {
 			$config['stockage'] = $stockage;
 			$message = $DB_utilisateurs->creerUtilisateur($utilisateur, $eMail, $motDePasse, $config, $enClair);
 		}
 		if (empty($message)) {
 			$laCle = $DB_utilisateurs->data["Cle"];
+			$URL = str_replace('compte.php', 'index.html',$_SERVER['SCRIPT_URI']).'?user='.$utilisateur.'&cle='.$laCle;
+			if (!mail($eMail,
+				'Activation du compte '.$utilisateur,
+				'Merci pour votre incription. Chargez la page '.$URL.' pour activer votre compte.',
+				"From: $expediteur\r\nReply-To: $expediteur")) {
+				$message = "Compte créé, mais avec une erreur d'envoi d'e-mail. Contactez l'administrateur par e-mail en précisant votre pseudo.";
+			}
 		}
 	}
 

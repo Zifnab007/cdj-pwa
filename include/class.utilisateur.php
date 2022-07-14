@@ -138,6 +138,21 @@ class Utilisateurs extends table
 		return $laCle;
 	}
 
+	function activerLeCompte($pseudo)
+	{
+		$laCle = "";
+		if ( $this->selectByReference("Nom",$pseudo) ) {
+			$laCle = md5(uniqid(rand(), true));
+			$lUtilisateur = array();
+			$lUtilisateur['Cle'] = $laCle;
+			$lUtilisateur['Actif'] = "1";
+			if(!$this->update("Nom",$pseudo,$lUtilisateur)) {
+				$laCle = "";
+			}
+		}
+		return $laCle;
+	}
+
 	function mettreAJourConfig($pseudo, $config)
 	{
 		$message = "";
@@ -161,8 +176,6 @@ class Utilisateurs extends table
 		$message = "";
 		if ($this->pseudoDejaDefini($pseudo)) {
 			$message = "L'utilisateur ".$utilisateur." existe déjà";
-		} else if ($this->emailDejaDefini($email)) {
-			$message = "L'adresse mail ".$cwemailutilisateur." existe déjà";
 		} else {
 			$message = $this->validerConfig($config);
 

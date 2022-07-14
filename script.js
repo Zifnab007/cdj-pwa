@@ -1,6 +1,7 @@
 // Les pages:
 // CON Connexion		(genererPageConnexion)
 // CMP Compte			(genererPageCompte)
+// ACT Activer			(genererPageActivation)
 // VAL Validation		(requeteGenererPageValidation)
 // COM Commode			(requeteGenererPageCommode)
 // TIR Tiroir			(requeteGenererPageTiroir)
@@ -71,6 +72,12 @@ var nomDuSite = "La commode de Julie";
 
 document.addEventListener("DOMContentLoaded", function() {
 	tracer('DOMContentLoaded event');
+	let url = new URL(window.location.href);
+	let urlUtilisateur = url.searchParams.get("user");
+	let urlCle = url.searchParams.get("cle");
+	if ((null != urlUtilisateur) && (null != urlCle)) {
+		declarerNouvellePage("ACT");
+	}
 	if (stockage) {
 		var pageStockee = localStorage.getItem('laPage');
 		if (null != pageStockee) {
@@ -78,7 +85,9 @@ document.addEventListener("DOMContentLoaded", function() {
 			tracer("Restauration de l'historique des pages avec "+laPage.length+' element');
 		}
 	}
-	generateUI();
+	tracer("URL HOSTNAME : "+url.hostname);
+	tracer("URL PATHNAME : "+url.pathname);
+	generateUI(urlUtilisateur, urlCle);
 });
 window.addEventListener("unload", function() {
 	tracer('onunload event');
@@ -101,7 +110,7 @@ function pageCourante() {
 
 function declarerNouvellePage(page) {
 	// Vider l'historique lorsqu'on reviens sur la page de connexion
-	if ("CON" == page) {
+	if (("CON" == page) ||("ACT" == page))  {
 		while (laPage.length > 0) {laPage.pop()}
 	}
 	// Mettre à jour le texte les boutons
@@ -186,7 +195,7 @@ function memoriserDonneePage() {
 
 function allerPagePrecedante() {
 	if (0 != laPage.length) { laPage.pop(); }
-	generateUI();
+	generateUI(null, null);
 }
 
 function validerMessageEtEnregistrerCle(json) {
@@ -570,9 +579,17 @@ function validerConnexion(json) {
 		url.ajouter("pseudo", json.pseudo);
 		url.ajouter("cle", json.cle);
 		tracer('execution de validerConnexion ' + url.requete());
-		fetch(url.requete(), url.option())
-			.then(response => response.json(), err => console.error('DEBUG Une erreur lors du fetch ' + url.href + ' : ' + err))
-			.then(json => requeteGenererPageCommode(json) );
+		if ("ACT" == pageCourante()) {
+			tracer('RECHARGER LA PAGE');
+			lesPages.vider();
+			declarerNouvellePage("COM");
+			let url = new URL(window.location.href);
+			window.location.replace("https://"+url.hostname+url.pathname);
+		} else {
+			fetch(url.requete(), url.option())
+				.then(response => response.json(), err => console.error('DEBUG Une erreur lors du fetch ' + url.href + ' : ' + err))
+				.then(json => requeteGenererPageCommode(json) );
+		}
 	} else {
 		genererPageFatal("LA CONNEXION EST REFUSEE", json.erreur);
 	}
@@ -706,6 +723,68 @@ function genererPageCompte(){
 }
 
 // ###############################################
+// Génération de la page de d'activation de compte ("ACT")
+//
+//
+async function demanderActivationCompte() {
+// 	memoriserDonneePage();
+	const url = new RequeteGet(window.location.href,'activer'+extention);
+	url.ajouter("pseudo", lUtilisateur.get());
+	url.ajouter("cle", laCle.get());
+	let motDePasseHache = "";
+	if (hachageIndisponible) {
+		motDePasseHache = document.getElementById("motDePasseACT").value;
+		url.ajouter("enClair", "1");
+	} else {
+		 motDePasseHache = await digestMessage(document.getElementById("motDePasseACT").value);
+	}
+	url.ajouter("mdp", motDePasseHache);
+	tracer('Clic sur demanderActivationCompte ' + url.requete());
+	fetch(url.requete(), url.option())
+		.then(
+			response => response.json(),
+			err => genererPageErreur(err, null))
+		.then(json => validerConnexion(json) )
+		.catch(err => genererPageFatal(err, "Erreur interne levée lors de l'activation d'un compte pour "+lUtilisateur.get()));
+
+}
+
+// Generer la page de demande d'activation de compte
+function genererPageActivation(){
+
+	tracer('appel de la fonction genererPageActivation');
+	let mdp = "";
+
+	let html = `
+          <div class="column">
+
+            <div class="box">`;
+
+	html += chapitreEnHTML("Activer le compte : "+lUtilisateur.get(), "");
+	html += saisieEnHTML("Pseudo", "pseudoACT", "pseudo", "Votre pseudo", lUtilisateur.get(), "", "");
+	html += saisieEnHTML("Mot de passe", "motDePasseACT", "password", "Votre mot de passe", "", "", "");
+
+	html += `
+              <div class="field is-grouped">
+                <div class="control">
+                  <button id="demanderActivationCompte" class="button is-link">Activer</button>
+                </div>
+              </div>
+
+           </div>`;
+
+	document.querySelector(".corpDePage").innerHTML = html;
+	document.querySelector(".title").innerHTML = nomDuSite;
+	document.getElementById("pseudoACT").className = document.getElementById("pseudoACT").class+" is-hidden";
+	document.getElementById("demanderActivationCompte").onclick = demanderActivationCompte;
+	validerEntree(document.getElementById("motDePasseACT"), "motDePasseACTOK", "motDePasseACTKO", "password");
+	document.getElementById("motDePasseACT").addEventListener('input', function (){validerEntree(this, "motDePasseACTOK", "motDePasseACTKO", "password")});
+	declarerNouvellePage("ACT");
+	tracer("La page ACTIVATION (ACT) est chargée");
+
+}
+
+// ###############################################
 // Génération de la page de validation ("VAL")
 //
 //
@@ -724,8 +803,7 @@ function requeteGenererPageValidation(json){
 
             <div class="box">
 
-              <!-- label class="label">Vous devez activer votre compte en cliquant sur le lien envoyé par e-mail.</label -->
-              <label class="label">La méthode d'activation du compte n'est pas encore implémentée.</label>
+              <label class="label">Vous devez activer votre compte en cliquant sur le lien envoyé par e-mail. Pour l'activation, il vous faudra entrer le mot de passe donné à la création du compte.</label>
 
             </div>
 
@@ -1615,9 +1693,14 @@ async function genererInformation(titre = "Info", info = "Aucun information"){
 // #####################################################
 // Génération de la l'interface au chargement de l'appli
 //
-function generateUI(){
+function generateUI(utilisateur, cle){
 
-	tracer('Appel de la fonction generateUI');
+	tracer('Appel de la fonction generateUI pour '+utilisateur+' avec la clé '+cle);
+	if ((null != utilisateur) && (null != cle)) {
+		lUtilisateur.set(utilisateur);
+		laCle.set(cle);
+		declarerNouvellePage("ACT");
+	}
 
 	tracer('charger la page '+pageCourante());
 	if ("COM" == pageCourante()) {
@@ -1630,8 +1713,11 @@ function generateUI(){
 			.then(response => response.json(), err => console.error('ERREUR Une erreur lors du fetch commode.php : ' + err))
 			.then(json => requeteGenererPageCommode(json) );
 	} else if ("CON" == pageCourante()) {
-		// afficher un page pour se connecter
+		// afficher la page pour se connecter
 		genererPageConnexion();
+	} else if ("ACT" == pageCourante()) {
+		// afficher la page pour activer le compte
+		genererPageActivation();
 	} else if ("CMP" == pageCourante()) {
 		// Afficher la céation d'un compte
 		genererPageCompte();
