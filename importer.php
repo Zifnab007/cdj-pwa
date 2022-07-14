@@ -12,7 +12,9 @@
 	$utilisateur = isset ($_POST['pseudo']) ? $_POST['pseudo'] : "" ;
 	$cle = isset ($_POST['cle']) ? $_POST['cle'] : "" ;
 	$nomDuTiroir = "";
+	$description = "";
 	$avecPhoto = 0;
+	$avecCommerce = 0;
 	$laCle = "";
 	$message = "";
 	$identifiant = 0;
@@ -75,12 +77,26 @@
 				} else {
 					$nomDuTiroir = $rang[1];
 				}
+			} else if ("Description" == $rang[0]) {
+				if (count($rang) < 2) {
+					$message .= "La ligne Description doit avoir au moin 2 colonnes! ";
+ 
+				} else {
+					$description = $rang[1];
+				}
 			} else if ("Photo" == $rang[0]) {
 				if ((count($rang) < 2) || (("0" != $rang[1]) && ("1" != $rang[1]))) {
 					$message .= "La ligne Photo doit avoir au moin 2 colonnes! ";
  
 				} else {
 					$avecPhoto = $rang[1];
+				}
+			} else if ("Commerce" == $rang[0]) {
+				if ((count($rang) < 2) || (("0" != $rang[1]) && ("1" != $rang[1]))) {
+					$message .= "La ligne Commerce doit avoir au moin 2 colonnes! ";
+ 
+				} else {
+					$avecCommerce = $rang[1];
 				}
 			} else if ("Champs" == $rang[0]) {
 				// Lecture du nom des champs
@@ -175,7 +191,7 @@
 			$index++;
 			$lesChamps[] = $unChamp;
 		}
-		$message = $DB_utilisateurs->creerTable($nomDuTiroir, $lesChamps, $avecPhoto);
+		$message = $DB_utilisateurs->creerTable($nomDuTiroir, $description, $lesChamps, $avecPhoto, $avecCommerce);
 		if (empty($message)) {
 			$identifiant = $DB_utilisateurs->derniereTable;
 			$lesTiroirs = new Tiroir();

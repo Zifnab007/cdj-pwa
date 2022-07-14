@@ -1,22 +1,22 @@
 // Les pages:
-// CON Connexion		(genererPageConnexion)
-// CMP Compte			(genererPageCompte)
 // ACT Activer			(genererPageActivation)
-// VAL Validation		(requeteGenererPageValidation)
+// CMP Compte			(genererPageCompte)
 // COM Commode			(requeteGenererPageCommode)
-// TIR Tiroir			(requeteGenererPageTiroir)
-// CRT CreationTiroir		(genererPageNouveauTiroir)
-// IMP ImporttatioTiroir	(genererPageImporterTiroir)
-// MOT ModifTiroir
-// SUT SuppressionTiroir
-// OBJ Objet
+// CON Connexion		(genererPageConnexion)
+// CNF Information		(genererConfiguration)
 // CRO CreationObjet            (genererPageNouvelObjet)
-// MOO ModifObjet               (genererPageObjet)
-// SUO SuppressionObjet         (genererPageSuppressionObjet)
+// CRT CreationTiroir		(genererPageNouveauTiroir)
 // ERR Erreur                   (genererPageErreur)
 // FAT Erreur                   (genererPageFatal)
+// IMP ImporttatioTiroir	(genererPageImporterTiroir)
 // INF Information		(genererInformation)
-// CNF Information		(genererConfiguration)
+// MOO ModifObjet               (genererPageObjet)
+// MOT ModifTiroir
+// OBJ Objet
+// TIR Tiroir			(requeteGenererPageTiroir)
+// SUO SuppressionObjet         (genererPageSuppressionObjet)
+// SUT SuppressionTiroir
+// VAL Validation		(requeteGenererPageValidation)
 // generateUI
 import { extention } from "./config.js";
 import { tracer, tracerTable, archiverLesTraces, tracesArchivees } from "./traceur.js";
@@ -1064,14 +1064,20 @@ function genererPageImporterTiroir() {
                 <td></td>
               </tr>
               <tr>
+                <td>"Description"</td>
+                <td>Une phrase pour décrire les objets dans le tiroir</td>
+                <td></td>
+                <td></td>
+              </tr>
+              <tr>
                 <td>"Photo"</td>
                 <td>1 si le tiroir affiche des photos, sinon 0</td>
                 <td></td>
                 <td></td>
               </tr>
               <tr>
-                <td>"Nom"</td>
-                <td>nom du tiroir</td>
+                <td>"Commerce"</td>
+                <td>1 si on veux créer des liens avec la liste des commerces, sinon 0</td>
                 <td></td>
                 <td></td>
               </tr>
