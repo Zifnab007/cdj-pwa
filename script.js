@@ -943,7 +943,7 @@ function requeteGenererPageTiroir(texte){
 			tracer("onclic Modification objet "+objet.id);
 			document.getElementById("M"+objet.id).onclick = function() {genererPageObjet(objet);};
 			document.getElementById("S"+objet.id).onclick = function() {genererPageSuppressionObjet(objet);};
-			if ("1" == commerce.get()) {
+			if (("1" == commerce.get()) && (leTiroir.data.length > nbMaxAvantAffichageCompact)) {
 				let lesPrix = "";
 				for (const [key, value] of Object.entries(objet.Commerces)) {
 					lesPrix = commerceListeFormatage(value);
